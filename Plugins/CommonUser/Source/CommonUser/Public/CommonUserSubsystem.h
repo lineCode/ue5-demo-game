@@ -533,6 +533,9 @@ protected:
 	//#START @damar ManualLoginAccelByte
 	/** Call ShowLoginUI on OSS. Return true if ShowLoginUI started. */
 	virtual bool ManualLoginAccelByte(FOnlineContextCache* System, TSharedRef<FUserLoginRequest> Request, int32 PlatformUserIndex);
+
+	UFUNCTION(BlueprintCallable, Category = CommonUser)
+	virtual void SetAccelByteUserCreds(const FString& Username, const FString& Password);
 	//#END
 	
 	/** Call QueryUserPrivilege on OSS. Return true if QueryUserPrivilege started. */

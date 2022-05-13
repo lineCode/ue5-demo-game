@@ -477,6 +477,14 @@ bool UCommonUserSubsystem::ManualLoginAccelByte(FOnlineContextCache* System, TSh
 	const FOnlineAccountCredentials AccountCredentials(TEXT("AccelByte"), Request->ManualLoginUserCreds.Username, Request->ManualLoginUserCreds.Password);
 	return System->IdentityInterface->Login(PlatformUserIndex, AccountCredentials);
 }
+
+void UCommonUserSubsystem::SetAccelByteUserCreds(const FString& Username, const FString& Password)
+{
+	FCommandLine::Append(*FString::Printf(TEXT(" -AUTH_TYPE=ACCELBYTE -AUTH_LOGIN=%s -AUTH_PASSWORD=%s"), *Username, *Password));
+
+	UE_LOG(LogTemp, Warning, TEXT("CommandLine : %s"), FCommandLine::Get());
+}
+
 // #END
 
 bool UCommonUserSubsystem::QueryUserPrivilege(FOnlineContextCache* System, TSharedRef<FUserLoginRequest> Request, int32 PlatformUserIndex)

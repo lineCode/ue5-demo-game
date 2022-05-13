@@ -49,33 +49,6 @@ UAsyncAction_CommonUserInitialize* UAsyncAction_CommonUserInitialize::LoginForOn
 	return Action;
 }
 
-// #START @damar UAsyncAction_CommonUserInitialize::LoginForOnlinePlayAccelByte
-UAsyncAction_CommonUserInitialize* UAsyncAction_CommonUserInitialize::LoginForOnlinePlayAccelByte(
-	UCommonUserSubsystem* Target, int32 LocalPlayerIndex, const FString& Username, const FString& Password)
-{
-	UAsyncAction_CommonUserInitialize* Action = NewObject<UAsyncAction_CommonUserInitialize>();
-
-	Action->RegisterWithGameInstance(Target);
-
-	if (Target && Action->IsRegistered())
-	{
-		Action->Subsystem = Target;
-		
-		Action->Params.RequestedPrivilege = ECommonUserPrivilege::CanPlayOnline;
-		Action->Params.LocalPlayerIndex = LocalPlayerIndex;
-		Action->Params.bCanCreateNewLocalPlayer = false;
-		Action->Params.ManualLoginUserCreds.Username = Username;
-		Action->Params.ManualLoginUserCreds.Password = Password;
-	}
-	else
-	{
-		Action->SetReadyToDestroy();
-	}
-
-	return Action;
-}
-// #END
-
 void UAsyncAction_CommonUserInitialize::HandleFailure()
 {
 	const UCommonUserInfo* UserInfo = nullptr;

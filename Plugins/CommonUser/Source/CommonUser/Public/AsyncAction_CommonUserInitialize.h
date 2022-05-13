@@ -37,17 +37,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = CommonUser, meta = (BlueprintInternalUseOnly = "true"))
 	static UAsyncAction_CommonUserInitialize* LoginForOnlinePlay(UCommonUserSubsystem* Target, int32 LocalPlayerIndex);
 
-	// #START @damar Async Login AccelByte
-	/**
-	 * Attempts to log an existing user into the platform-specific online backend to enable full online play
-	 * When the process has succeeded or failed, it will broadcast the OnInitializationComplete delegate.
-	 *
-	 * @param LocalPlayerIndex	Index of existing LocalPlayer in Game Instance
-	 */
-	UFUNCTION(BlueprintCallable, Category = CommonUser, meta = (BlueprintInternalUseOnly = "true"))
-	static UAsyncAction_CommonUserInitialize* LoginForOnlinePlayAccelByte(UCommonUserSubsystem* Target, int32 LocalPlayerIndex, const FString& Username, const FString& Password);
-	// #END
-	
 	/** Call when initialization succeeds or fails */
 	UPROPERTY(BlueprintAssignable)
 	FCommonUserOnInitializeCompleteMulticast OnInitializationComplete;
