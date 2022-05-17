@@ -480,9 +480,41 @@ bool UCommonUserSubsystem::ManualLoginAccelByte(FOnlineContextCache* System, TSh
 
 void UCommonUserSubsystem::SetAccelByteUserCreds(const FString& Username, const FString& Password)
 {
-	FCommandLine::Append(*FString::Printf(TEXT(" -AUTH_TYPE=ACCELBYTE -AUTH_LOGIN=%s -AUTH_PASSWORD=%s"), *Username, *Password));
+	if(Username.IsEmpty() || Password.IsEmpty())
+	{
+		UE_LOG(LogCommonUser, Error, TEXT("Username or Password cannot be empty!"));
+		return;
+	}
+	
+	FString CmdArgs = FCommandLine::Get();
+	if(!CmdArgs.Contains(TEXT("-AUTH_TYPE=ACCELBYTE")))
+	{
+		CmdArgs.Append(*FString::Printf(TEXT(" -AUTH_TYPE=ACCELBYTE")));
+	}
 
-	UE_LOG(LogTemp, Warning, TEXT("CommandLine : %s"), FCommandLine::Get());
+	if(CmdArgs.Contains(TEXT("-AUTH_LOGIN=")))
+	{
+		FString OldId;
+		FParse::Value(FCommandLine::Get(), TEXT("-AUTH_LOGIN="), OldId);
+		CmdArgs = CmdArgs.Replace(*OldId, *Username);
+	}
+	else
+	{
+		CmdArgs.Append(*FString::Printf(TEXT(" -AUTH_LOGIN=%s"), *Username));
+	}
+	
+	if(CmdArgs.Contains(TEXT("-AUTH_PASSWORD=")))
+	{
+		FString OldPassword;
+		FParse::Value(FCommandLine::Get(), TEXT("-AUTH_PASSWORD="), OldPassword);
+		CmdArgs = CmdArgs.Replace(*OldPassword, *Password);
+	}
+	else
+	{
+		CmdArgs.Append(*FString::Printf(TEXT(" -AUTH_PASSWORD=%s"), *Password));
+	}
+
+	FCommandLine::Set(*CmdArgs);
 }
 
 // #END
@@ -1533,6 +1565,7 @@ void UCommonUserSubsystem::ProcessLoginRequest(TSharedRef<FUserLoginRequest> Req
 				&& (Request->AutoLoginState == ECommonUserAsyncTaskState::Done || Request->AutoLoginState == ECommonUserAsyncTaskState::Failed)
 				&& (Request->LoginUIState == ECommonUserAsyncTaskState::Done || Request->LoginUIState == ECommonUserAsyncTaskState::Failed))
 			{
+				Request->ManualLoginState = ECommonUserAsyncTaskState::InProgress;
 				Request->Error.Reset();
 
 				if(ManualLoginAccelByte(System, Request, PlatformUserIndex))
@@ -1668,6 +1701,14 @@ void UCommonUserSubsystem::HandleUserLoginCompleted(int32 PlatformUserIndex, boo
 			{
 				Request->AutoLoginState = bWasSuccessful ? ECommonUserAsyncTaskState::Done : ECommonUserAsyncTaskState::Failed;
 			}
+			
+			// #START @Damar : Handle when manual login complete with failure
+			if (Request->ManualLoginState == ECommonUserAsyncTaskState::InProgress)
+			{
+				Request->ManualLoginState = bWasSuccessful ? ECommonUserAsyncTaskState::Done : ECommonUserAsyncTaskState::Failed;
+			}
+			// #END
+
 
 			if (!bWasSuccessful)
 			{
