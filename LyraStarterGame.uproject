@@ -301,6 +301,10 @@
 		{
 			"Name": "BlackBoxSDK",
 			"Enabled": true
+		},
+		{
+			"Name": "AccelByteCommon",
+			"Enabled": true
 		}
 	],
 	"EpicSampleNameHash": "451731683"

@@ -43,6 +43,10 @@ public:
 	virtual void FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation) override;
 	virtual bool PlayerCanRestart_Implementation(APlayerController* Player) override;
 	virtual void InitGameState() override;
+	// #START @damar Login Logout
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
+	// #END @damar
 	//~End of AGameModeBase interface
 
 	FOnGameModeCombinedPostLogin& OnGameModeCombinedPostLogin() { return OnGameModeCombinedPostLoginDelegate; }

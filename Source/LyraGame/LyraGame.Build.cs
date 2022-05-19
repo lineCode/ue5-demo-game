@@ -69,7 +69,10 @@ public class LyraGame : ModuleRules
 				"NetworkReplayStreaming",
 				"UIExtension",
 				"ClientPilot",
-				"AudioModulation"
+				"AudioModulation",
+				"AccelByteCommonServer",
+				"AccelByteCommonGame",
+				"Party"
 			}
 		);
 

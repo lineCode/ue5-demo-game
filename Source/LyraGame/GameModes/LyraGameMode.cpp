@@ -19,6 +19,7 @@
 #include "Development/LyraDeveloperSettings.h"
 #include "Player/LyraPlayerSpawningManagerComponent.h"
 #include "TimerManager.h"
+#include "AccelByteCommonServerSubsystem.h"
 
 ALyraGameMode::ALyraGameMode(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -146,6 +147,14 @@ void ALyraGameMode::HandleMatchAssignmentIfNotExpectingOne()
 void ALyraGameMode::OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const FString& ExperienceIdSource)
 {
 #if WITH_SERVER_CODE
+	// #START @Damar : Register to DSM
+	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
+	if(ServerSubsystem != nullptr)
+	{
+		ServerSubsystem->StartServerInitialization();
+	}
+	// #END
+	
 	if (ExperienceId.IsValid())
 	{
 		UE_LOG(LogLyraExperience, Log, TEXT("Identified experience %s (Source: %s)"), *ExperienceId.ToString(), *ExperienceIdSource);
@@ -316,6 +325,36 @@ void ALyraGameMode::InitGameState()
 	ULyraExperienceManagerComponent* ExperienceComponent = GameState->FindComponentByClass<ULyraExperienceManagerComponent>();
 	check(ExperienceComponent);
 	ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnLyraExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
+}
+
+void ALyraGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+
+#if WITH_SERVER_CODE
+	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
+	if(ServerSubsystem != nullptr)
+	{
+		if(!ServerSubsystem->IsClaimed())
+		{
+			ServerSubsystem->ContinueServerInitialization();
+		}
+	}
+#endif
+}
+
+void ALyraGameMode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+	// TODO @damar : call shutdown if no player
+	if(GetNumPlayers() <= 0)
+	{
+		UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
+		if(ServerSubsystem != nullptr)
+		{
+			ServerSubsystem->SendShutdownToDSM();
+		}
+	}
 }
 
 void ALyraGameMode::OnPostLogin(AController* NewPlayer)
