@@ -12,6 +12,8 @@ class ULyraSocialParty;
 class USocialManager;
 class ALyraPlayerController;
 
+class UAccelByteSocialManager;
+
 UCLASS(Config = Game)
 class LYRAGAME_API ULyraGameInstance : public UCommonGameInstance
 {
@@ -23,8 +25,13 @@ public:
 
 	ALyraPlayerController* GetPrimaryPlayerController() const;
 
+	UAccelByteSocialManager* GetSocialManager() const { return SocialManager; }
 protected:
 
 	virtual void Init() override;
 	virtual void Shutdown() override;
+
+private:
+	UPROPERTY(Transient)
+	UAccelByteSocialManager* SocialManager;
 };

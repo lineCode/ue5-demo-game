@@ -174,6 +174,32 @@ private:
 	FCommonSession_FindSessionsFinishedDynamic K2_OnSearchFinished;
 };
 
+// #START @Damar
+
+/** Delegates called when a matchmaking session completes */
+DECLARE_MULTICAST_DELEGATE_TwoParams(FCommonSession_MatchmakingSessionsFinished, bool bSucceeded, const FText& ErrorMessage);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCommonSession_MatchmakingSessionsFinishedDynamic, bool, bSucceeded, FText, ErrorMessage);
+
+/** Request object describing a matcmaking session, this object will be updated once the search has completed */
+UCLASS(BlueprintType)
+class COMMONUSER_API UCommonSession_MatchmakingSessionRequest : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	/** Native Delegate called when a session search completes */
+	FCommonSession_MatchmakingSessionsFinished OnMatchmakingFinished;
+
+	/** Called by subsystem to execute finished delegates */
+	void NotifyMatchmakingFinished(bool bSucceeded, const FText& ErrorMessage);
+
+private:
+	/** Delegate called when a session search completes */
+	UPROPERTY(BlueprintAssignable, Category = "Events", meta = (DisplayName = "On Matchmaking Finished", AllowPrivateAccess = true))
+	FCommonSession_MatchmakingSessionsFinishedDynamic K2_OnMatchmakingFinished;
+};
+// #END
+
 
 //////////////////////////////////////////////////////////////////////
 // UCommonSessionSubsystem
@@ -210,7 +236,15 @@ public:
 	/** Starts a process to look for existing sessions or create a new one if no viable sessions are found */
 	UFUNCTION(BlueprintCallable, Category=Session)
 	virtual void QuickPlaySession(APlayerController* JoiningOrHostingPlayer, UCommonSession_HostSessionRequest* Request);
+	
+	/** #START @Damar : Starts a process to matchmaking with other player. */
+	UFUNCTION(BlueprintCallable, Category=Session)
+	virtual void MatchmakingSession(APlayerController* JoiningOrHostingPlayer, UCommonSession_HostSessionRequest* HostRequest);
 
+	UFUNCTION(BlueprintCallable, Category=Session)
+	virtual UCommonSession_MatchmakingSessionRequest* CreateOnlineMatchmakingSessionRequest();
+	// #END
+	
 	/** Starts process to join an existing session, if successful this will connect to the specified server */
 	UFUNCTION(BlueprintCallable, Category=Session)
 	virtual void JoinSession(APlayerController* JoiningPlayer, UCommonSession_SearchResult* Request);
@@ -229,9 +263,17 @@ protected:
 	/** Called to fill in a session request from quick play host settings, can be overridden for game-specific behavior */
 	virtual TSharedRef<FCommonOnlineSearchSettings> CreateQuickPlaySearchSettings(UCommonSession_HostSessionRequest* Request, UCommonSession_SearchSessionRequest* QuickPlayRequest);
 
+	// #START @Damar
+	virtual TSharedRef<FCommonOnlineSearchSettings> CreateMatchmakingSearchSettings(UCommonSession_HostSessionRequest* Request, UCommonSession_SearchSessionRequest* SearchRequest);
+	// #END
+	
 	/** Called when a quick play search finishes, can be overridden for game-specific behavior */
 	virtual void HandleQuickPlaySearchFinished(bool bSucceeded, const FText& ErrorMessage, TWeakObjectPtr<APlayerController> JoiningOrHostingPlayer, TStrongObjectPtr<UCommonSession_HostSessionRequest> HostRequest);
 
+	// @Damar HandleMatchmaking Finished
+	virtual void HandleMatchmakingFinished(bool bSucceeded, const FText& ErrorMessage, TWeakObjectPtr<APlayerController> JoiningOrHostingPlayer, TStrongObjectPtr<UCommonSession_HostSessionRequest> HostRequest);
+	// #END
+	
 	/** Called when traveling to a session fails */
 	virtual void TravelLocalSessionFailure(UWorld* World, ETravelFailure::Type FailureType, const FString& ReasonString);
 
@@ -267,10 +309,17 @@ protected:
 	void OnUpdateSessionComplete(FName SessionName, bool bWasSuccessful);
 	void OnEndSessionComplete(FName SessionName, bool bWasSuccessful);
 	void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
+
+	// #START @Damar Matchmaking Handler
+	void OnMatchmakingComplete(FName SessionName, bool bWasSuccessful);
+	void OnCancelMatchmakingComplete(FName SessionName, bool bWasSuccessful);
+	// #End
+	
 	void OnFindSessionsComplete(bool bWasSuccessful);
 	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	void OnRegisterJoiningLocalPlayerComplete(const FUniqueNetId& PlayerId, EOnJoinSessionCompleteResult::Type Result);
 	void FinishJoinSession(EOnJoinSessionCompleteResult::Type Result);
+
 #else
 	void BindOnlineDelegatesOSSv2();
 	void CreateOnlineSessionInternalOSSv2(ULocalPlayer* LocalPlayer, UCommonSession_HostSessionRequest* Request);
