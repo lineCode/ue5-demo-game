@@ -36,6 +36,7 @@ bool UAccelByteCommonServerSubsystem::ShouldCreateSubsystem(UObject* Outer) cons
 
 void UAccelByteCommonServerSubsystem::StartServerInitialization()
 {
+#if UE_SERVER
 	ServerState = EServerState::ServerLogin;
 	if(!IsServerLoggedIn())
 	{
@@ -45,10 +46,12 @@ void UAccelByteCommonServerSubsystem::StartServerInitialization()
 	{
 		RegisterServerToDSM();
 	}
+#endif
 }
 
 void UAccelByteCommonServerSubsystem::ContinueServerInitialization()
 {
+#if UE_SERVER
 	switch(ServerState)
 	{
 		case(EServerState::NotStarted):
@@ -61,10 +64,12 @@ void UAccelByteCommonServerSubsystem::ContinueServerInitialization()
 		default:
 		break;
 	}
+#endif
 }
 
 void UAccelByteCommonServerSubsystem::ServerLogin()
 {
+#if UE_SERVER
 	if(IsServerLoggedIn())
 	{
 		return;
@@ -74,10 +79,12 @@ void UAccelByteCommonServerSubsystem::ServerLogin()
 		FVoidHandler::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnServerLoginSuccess),
 		FErrorHandler::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnServerLoginFailed)
 	);
+#endif
 }
 
 void UAccelByteCommonServerSubsystem::RegisterServerToDSM()
 {
+#if UE_SERVER
 	if(FString(FCommandLine::Get()).Contains(TEXT("-localds")))
 	{
 		// TODO : support for local DS (not in our milestone)
@@ -89,23 +96,28 @@ void UAccelByteCommonServerSubsystem::RegisterServerToDSM()
 		FVoidHandler::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnServerRegisterToDSMSuccess),
 		FErrorHandler::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnServerRegisterToDSMFailed)
 	);
+#endif
 }
 
 void UAccelByteCommonServerSubsystem::GetSessionIdDSM()
 {
+#if UE_SERVER
 	GetServerApi()->ServerDSM.GetSessionId(
 		THandler<FAccelByteModelsServerSessionResponse>::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnGetSessionIdSuccess),
 		FErrorHandler::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnGetSessionIdFailed)
 	);
+#endif
 }
 
 void UAccelByteCommonServerSubsystem::SendShutdownToDSM()
 {
+#if UE_SERVER
 	GetServerApi()->ServerDSM.SendShutdownToDSM(
 		true,
 		SessionId,
 		FVoidHandler::CreateLambda([](){}),
 		FErrorHandler::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnAccelByteCommonServerError));
+#endif
 }
 
 AccelByte::FServerApiClientPtr UAccelByteCommonServerSubsystem::GetServerApi()

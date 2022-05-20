@@ -146,7 +146,7 @@ void ALyraGameMode::HandleMatchAssignmentIfNotExpectingOne()
 
 void ALyraGameMode::OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const FString& ExperienceIdSource)
 {
-#if WITH_SERVER_CODE
+#if UE_SERVER
 	// #START @Damar : Register to DSM
 	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
 	if(ServerSubsystem != nullptr)
@@ -154,6 +154,8 @@ void ALyraGameMode::OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const F
 		ServerSubsystem->StartServerInitialization();
 	}
 	// #END
+#endif
+#if WITH_SERVER_CODE
 	
 	if (ExperienceId.IsValid())
 	{
