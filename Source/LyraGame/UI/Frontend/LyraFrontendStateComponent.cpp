@@ -131,7 +131,7 @@ void ULyraFrontendStateComponent::FlowStep_TryShowPressStartScreen(FControlFlowN
 		}
 	}
 
-	// #START @Damar Check if Platform Subsystem is available, if not, using AccelByte Login
+	// #START @AccelByte Implementation  Check if Platform Subsystem is available, if not, using AccelByte Login
 	IOnlineSubsystem* PlatformSubsystem = UserSubsystem->GetOnlineSubsystem(ECommonUserOnlineContext::Platform);
 	if(!PlatformSubsystem)
 	{

@@ -471,7 +471,7 @@ bool UCommonUserSubsystem::ShowLoginUI(FOnlineContextCache* System, TSharedRef<F
 #endif
 }
 
-// START @damar ManualLogin
+// START @AccelByte Implementation  ManualLogin
 bool UCommonUserSubsystem::ManualLoginAccelByte(FOnlineContextCache* System, TSharedRef<FUserLoginRequest> Request,	int32 PlatformUserIndex)
 {
 	const FOnlineAccountCredentials AccountCredentials(TEXT("AccelByte"), Request->ManualLoginUserCreds.Username, Request->ManualLoginUserCreds.Password);
@@ -1556,7 +1556,7 @@ void UCommonUserSubsystem::ProcessLoginRequest(TSharedRef<FUserLoginRequest> Req
 			}
 		}
 
-		// #START @damar ManualLogin
+		// #START @AccelByte Implementation  ManualLogin
 		bool bLoginUsingAB = false;
 		GConfig->GetBool(TEXT("AccelByteLogin"), TEXT("bEnabled"), bLoginUsingAB, GEngineIni);
 		if(bLoginUsingAB && Request->ManualLoginState == ECommonUserAsyncTaskState::NotStarted)
@@ -1589,7 +1589,7 @@ void UCommonUserSubsystem::ProcessLoginRequest(TSharedRef<FUserLoginRequest> Req
 		Request->AutoLoginState == ECommonUserAsyncTaskState::Failed &&
 		Request->TransferPlatformAuthState == ECommonUserAsyncTaskState::Failed &&
 
-		// #START @damar add failure condition on ManualLogin
+		// #START @AccelByte Implementation  add failure condition on ManualLogin
 		Request->ManualLoginState == ECommonUserAsyncTaskState::Failed
 		// #END
 		)
@@ -1702,7 +1702,7 @@ void UCommonUserSubsystem::HandleUserLoginCompleted(int32 PlatformUserIndex, boo
 				Request->AutoLoginState = bWasSuccessful ? ECommonUserAsyncTaskState::Done : ECommonUserAsyncTaskState::Failed;
 			}
 			
-			// #START @Damar : Handle when manual login complete with failure
+			// #START @AccelByte Implementation  : Handle when manual login complete with failure
 			if (Request->ManualLoginState == ECommonUserAsyncTaskState::InProgress)
 			{
 				Request->ManualLoginState = bWasSuccessful ? ECommonUserAsyncTaskState::Done : ECommonUserAsyncTaskState::Failed;

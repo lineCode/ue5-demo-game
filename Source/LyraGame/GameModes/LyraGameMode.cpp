@@ -147,7 +147,7 @@ void ALyraGameMode::HandleMatchAssignmentIfNotExpectingOne()
 void ALyraGameMode::OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const FString& ExperienceIdSource)
 {
 #if UE_SERVER
-	// #START @Damar : Register to DSM
+	// #START @AccelByte Implementation  : Register to DSM
 	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
 	if(ServerSubsystem != nullptr)
 	{
@@ -348,7 +348,7 @@ void ALyraGameMode::PostLogin(APlayerController* NewPlayer)
 void ALyraGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
-	// TODO @damar : call shutdown if no player
+	// TODO @AccelByte Implementation  : call shutdown if no player
 	if(GetNumPlayers() <= 0)
 	{
 		UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();

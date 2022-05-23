@@ -52,7 +52,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = UI)
 	TSoftClassPtr<UCommonActivatableWidget> MainScreenClass;
 
-	// #START @damar AccelByteLoginScreenClass
+	// #START @AccelByte ImplementationAccelByteLoginScreenClass
 	UPROPERTY(EditAnywhere, Category = UI)
 	TSoftClassPtr<UCommonActivatableWidget> AccelByteLoginScreenClass;
 	// #END

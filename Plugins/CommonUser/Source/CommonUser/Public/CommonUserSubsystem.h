@@ -32,7 +32,7 @@ struct COMMONUSER_API FCommonUserTags
 	static FNativeGameplayTag Platform_Trait_SingleOnlineUser; // Platform.Trait.SingleOnlineUser
 };
 
-// #START @damar FCommonUserCredentials 
+// #START @AccelByte Implementation FCommonUserCredentials 
 USTRUCT()
 struct FCommonUserCredentials
 {
@@ -129,7 +129,7 @@ public:
 	/** Return the subsystem this is owned by */
 	class UCommonUserSubsystem* GetSubsystem() const;
 	
-	// #START @damar FCommonUserCredentials FUserLoginRequest
+	// #START @AccelByte ImplementationFCommonUserCredentials FUserLoginRequest
 	FCommonUserCredentials ManualLoginUserCreds = {TEXT(""), TEXT("")};
 	// #END
 };
@@ -188,7 +188,7 @@ struct COMMONUSER_API FCommonUserInitializeParams
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Default)
 	FCommonUserOnInitializeComplete OnUserInitializeComplete;
 
-	// #START @damar FCommonUserCredentials FUserLoginRequest
+	// #START @AccelByte ImplementationFCommonUserCredentials FUserLoginRequest
 	FCommonUserCredentials ManualLoginUserCreds = {TEXT(""), TEXT("")};
 	// #END
 };
@@ -448,7 +448,7 @@ protected:
 		/** Which local user is trying to log on */
 		TWeakObjectPtr<UCommonUserInfo> UserInfo;
 
-		// #START @damar FCommonUserCredentials FUserLoginRequest
+		// #START @AccelByte ImplementationFCommonUserCredentials FUserLoginRequest
 		FCommonUserCredentials ManualLoginUserCreds = {TEXT(""), TEXT("")};
 		// #END
 
@@ -464,7 +464,7 @@ protected:
 		/** State of attempt to use external login UI */
 		ECommonUserAsyncTaskState LoginUIState = ECommonUserAsyncTaskState::NotStarted;
 
-		// #START @damar ManualLoginState
+		// #START @AccelByte ImplementationManualLoginState
 		/** State of attempt to use ManualLogin */
 		ECommonUserAsyncTaskState ManualLoginState = ECommonUserAsyncTaskState::NotStarted;
 		// #END
@@ -530,7 +530,7 @@ protected:
 	/** Call ShowLoginUI on OSS. Return true if ShowLoginUI started. */
 	virtual bool ShowLoginUI(FOnlineContextCache* System, TSharedRef<FUserLoginRequest> Request, int32 PlatformUserIndex);
 
-	//#START @damar ManualLoginAccelByte
+	//#START @AccelByte ImplementationManualLoginAccelByte
 	/** Call ShowLoginUI on OSS. Return true if ShowLoginUI started. */
 	virtual bool ManualLoginAccelByte(FOnlineContextCache* System, TSharedRef<FUserLoginRequest> Request, int32 PlatformUserIndex);
 
