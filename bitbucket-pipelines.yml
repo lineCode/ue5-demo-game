@@ -8,5 +8,6 @@ pipelines:
             - 'ue5'
           script:
             - git submodule update --init --recursive
+            - git lfs pull
             - powershell ./Script/01.CreateNewVersion.ps1
             

@@ -1,6 +1,6 @@
 
 #include configuration
-. .\0.Configuration.ps1
+. .\00.Configuration.ps1
 
 # dynamic variable will be different on each job
 

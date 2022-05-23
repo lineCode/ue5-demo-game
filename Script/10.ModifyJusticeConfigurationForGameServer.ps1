@@ -1,5 +1,5 @@
 #include configuration
-. .\0.Configuration.ps1
+. .\00.Configuration.ps1
 
 
 Write-Output "---Step 10: Modify Justice configuration for game server---"

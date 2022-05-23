@@ -1,5 +1,5 @@
 #include configuration
-. .\0.Configuration.ps1
+. .\00.Configuration.ps1
 
 Write-Output "---Step 12: Upload game symbol for Game Server (Linux) Executable using WSL---"
 
