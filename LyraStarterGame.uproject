@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{65883ADA-4F2B-0753-C9A5-7FACCDA6B684}",
+	"EngineAssociation": "{247E85F7-44DB-8120-9D64-67B748DC613D}",
 	"Category": "Samples",
 	"Description": "",
 	"Modules": [
@@ -296,6 +296,10 @@
 		},
 		{
 			"Name": "OnlineSubsystemAccelByte",
+			"Enabled": true
+		},
+		{
+			"Name": "BlackBoxSDK",
 			"Enabled": true
 		}
 	],
