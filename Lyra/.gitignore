@@ -13,8 +13,10 @@
 
 # Compiled Dynamic libraries
 *.so
+!Plugins/BlackBoxSDK/*.so
 *.dylib
 *.dll
+!Plugins/BlackBoxSDK/*.dll
 
 # Fortran module files
 *.mod
@@ -23,10 +25,13 @@
 *.lai
 *.la
 *.a
+!Plugins/BlackBoxSDK/*.a
 *.lib
+!Plugins/BlackBoxSDK/*.lib
 
 # Executables
 *.exe
+!Plugins/BlackBoxSDK/*.exe
 *.out
 *.app
 *.ipa

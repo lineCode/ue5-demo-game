@@ -1,0 +1,12 @@
+pipelines:
+  default:
+      - step:
+          name: Step 1 Create BlackBox version
+          runs-on: 
+            - 'windows'
+            - 'self.hosted'
+            - 'ue5'
+          script:
+            - git submodule update --init --recursive
+            - powershell ./Script/01.CreateNewVersion.ps1
+            
