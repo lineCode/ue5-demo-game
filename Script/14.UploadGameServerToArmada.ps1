@@ -1,5 +1,5 @@
 #include configuration
-. .\00.Configuration.ps1
+. $PSScriptRoot\00.Configuration.ps1
 
 Write-Output "---Step 14: Upload  Game Server (Linux) Binaries to Armada---"
 

@@ -1,5 +1,5 @@
 #include configuration
-. .\00.Configuration.ps1
+. $PSScriptRoot\00.Configuration.ps1
 
 Write-Output "---Step 11: Building Game Server (Linux) Executable---"
 

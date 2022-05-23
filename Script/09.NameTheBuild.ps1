@@ -1,5 +1,5 @@
 #include configuration
-. .\00.Configuration.ps1
+. $PSScriptRoot\00.Configuration.ps1
 
 # Dynamic Data
 $BuildName = "gameserver-linux"

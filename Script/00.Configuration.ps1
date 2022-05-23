@@ -19,16 +19,16 @@ $VersionJsonObject = Get-Content $VersionJSONPath | ConvertFrom-Json
 $Version = $VersionJsonObject.version
 
 # Confidential variable, will be stored on the bitbucket variable
-$APIKey = $BB_APIKEY
-$UE4GameEnginePath = $BB_UNREAL_GAME_ENGINE_PATH
-$UE4BatchFile = $BB_UNREAL_GAME_ENGINE_PATH + "\Engine\Build\BatchFiles\RunUAT.bat"
+$APIKey = $env:BB_APIKEY
+$UE4GameEnginePath = $env:BB_UNREAL_GAME_ENGINE_PATH
+$UE4BatchFile = $env:BB_UNREAL_GAME_ENGINE_PATH + "\Engine\Build\BatchFiles\RunUAT.bat"
 
 # Justice Configuration
-$GameClient_ClientID = $BB_GAME_CLIENT_CLIENT_ID
-$GameClient_ClientSecret = $BB_GAME_CLIENT_CLIENT_SECRET
+$GameClient_ClientID = $env:BB_GAME_CLIENT_CLIENT_ID
+$GameClient_ClientSecret = $env:BB_GAME_CLIENT_CLIENT_SECRET
 
-$GameServer_ClientID = $BB_GAME_SERVER_CLIENT_ID
-$GameServer_ClientSecret = $BB_GAME_SERVER_CLIENT_SECRET
+$GameServer_ClientID = $env:BB_GAME_SERVER_CLIENT_ID
+$GameServer_ClientSecret = $env:BB_GAME_SERVER_CLIENT_SECRET
 
 $DSUploader_ClientID = $BB_DS_UPLOADER_CLIENT_ID
 
