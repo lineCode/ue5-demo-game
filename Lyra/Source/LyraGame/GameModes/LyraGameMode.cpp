@@ -147,6 +147,7 @@ void ALyraGameMode::HandleMatchAssignmentIfNotExpectingOne()
 void ALyraGameMode::OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const FString& ExperienceIdSource)
 {
 #if UE_SERVER
+	UE_LOG(LogTemp, Log, TEXT("LyraGameSession: Registering Server To DSM"))
 	// #START @AccelByte Implementation  : Register to DSM
 	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
 	if(ServerSubsystem != nullptr)
@@ -155,8 +156,8 @@ void ALyraGameMode::OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const F
 	}
 	// #END
 #endif
-#if WITH_SERVER_CODE
 	
+#if WITH_SERVER_CODE
 	if (ExperienceId.IsValid())
 	{
 		UE_LOG(LogLyraExperience, Log, TEXT("Identified experience %s (Source: %s)"), *ExperienceId.ToString(), *ExperienceIdSource);
@@ -329,34 +330,32 @@ void ALyraGameMode::InitGameState()
 	ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnLyraExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
 }
 
-void ALyraGameMode::PostLogin(APlayerController* NewPlayer)
-{
-	Super::PostLogin(NewPlayer);
-
-#if WITH_SERVER_CODE
-	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
-	if(ServerSubsystem != nullptr)
-	{
-		if(!ServerSubsystem->IsClaimed())
-		{
-			ServerSubsystem->ContinueServerInitialization();
-		}
-	}
-#endif
-}
-
 void ALyraGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
-	// TODO @AccelByte Implementation  : call shutdown if no player
-	if(GetNumPlayers() <= 0)
+	
+	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
+
+#if UE_SERVER
+	if(ServerSubsystem != nullptr)
 	{
-		UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
-		if(ServerSubsystem != nullptr)
+		UE_LOG(LogLyra, Log, TEXT("Logout. player left : %d!"), GetNumPlayers());
+		// last player is still counted
+		if(GetNumPlayers() <= 1)
 		{
-			ServerSubsystem->SendShutdownToDSM();
+			UE_LOG(LogLyra, Log, TEXT("Logout. Destructing session, no player left!"));
+			ServerSubsystem->TryDestructSession();
 		}
+		UE_LOG(LogLyra, Log, TEXT("Logout. RemoveUserFromSession"));
+		APlayerState* PlayerState = Exiting->GetPlayerState<APlayerState>();
+		if(PlayerState)
+		{
+			ServerSubsystem->RemoveUserFromSession(PlayerState->GetUniqueId());
+			return;
+		}
+		UE_LOG(LogLyra, Error, TEXT("Logout. RemoveUserFromSession Failed, PlayerState is not valid"));
 	}
+#endif
 }
 
 void ALyraGameMode::OnPostLogin(AController* NewPlayer)
@@ -364,6 +363,28 @@ void ALyraGameMode::OnPostLogin(AController* NewPlayer)
 	Super::OnPostLogin(NewPlayer);
 
 	OnGameModeCombinedPostLoginDelegate.Broadcast(this, NewPlayer);
+
+#if UE_SERVER
+	// #START @AccelByte Implementation: AddUserToSession and EnqueueJoinable
+	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
+	if(ServerSubsystem != nullptr)
+	{
+		if(!ServerSubsystem->IsClaimed())
+		{
+			UE_LOG(LogLyra, Log, TEXT("PostLogin. TryConstructSession"));
+			ServerSubsystem->TryConstructSession();
+		}
+		UE_LOG(LogLyra, Log, TEXT("PostLogin. AddUserToSession"));
+		APlayerState* PlayerState = NewPlayer->GetPlayerState<APlayerState>();
+		if(PlayerState)
+		{
+			ServerSubsystem->AddUserToSession(PlayerState->GetUniqueId());
+			return;
+		}
+		UE_LOG(LogLyra, Error, TEXT("PostLogin. AddUserToSession Failed, PlayerState is not valid"));
+	}
+	// #END
+#endif
 }
 
 void ALyraGameMode::RequestPlayerRestartNextFrame(AController* Controller, bool bForceReset)

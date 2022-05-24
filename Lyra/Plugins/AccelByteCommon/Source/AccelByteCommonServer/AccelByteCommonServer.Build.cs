@@ -28,7 +28,8 @@ public class AccelByteCommonServer : ModuleRules
 				"SlateCore",
 				"Json",
 				"JsonUtilities",
-				"AccelByteUe4Sdk"
+				"AccelByteUe4Sdk",
+				"OnlineSubsystemAccelByte"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

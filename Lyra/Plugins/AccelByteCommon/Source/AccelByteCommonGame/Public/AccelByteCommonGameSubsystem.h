@@ -1,21 +1,21 @@
-﻿// "// Copyright (c) 2022 AccelByte Inc. All Rights Reserved.// This is licensed software from AccelByte Inc, for limitations// and restrictions contact your company contract manager."
+﻿// Copyright (c) 2022 AccelByte Inc. All Rights Reserved.
+// This is licensed software from AccelByte Inc, for limitations
+// and restrictions contact your company contract manager."
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "CommonUserSubsystem.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "AccelByteCommonLobby.generated.h"
+#include "AccelByteCommonGameSubsystem.generated.h"
 
 class USocialManager;
-
-// TODO: Make extension for SocialToolkit (mandatory)!
 
 /**
  * Lobby, Party stuff
  */
 UCLASS()
-class ACCELBYTECOMMONGAME_API UAccelByteCommonLobby : public UGameInstanceSubsystem
+class ACCELBYTECOMMONGAME_API UAccelByteCommonGameSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 public:
