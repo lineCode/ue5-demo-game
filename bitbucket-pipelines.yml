@@ -10,4 +10,22 @@ pipelines:
             - git submodule update --init --recursive
             - git lfs pull
             - powershell ./Script/01.CreateNewVersion.ps1
+      - step:
+          name: Step 2 Create BlackBox Build
+          runs-on: 
+            - 'windows'
+            - 'self.hosted'
+            - 'ue5'
+          script:
+            - powershell ./Script/02.CreateBuildForGameClient.ps1
+            - powershell ./Script/03.NameTheBuild.ps1
+      - step:
+          name: Step 3 build the game client
+          runs-on: 
+            - 'windows'
+            - 'self.hosted'
+            - 'ue5'
+          script:
+            - powershell ./Script/04.ModifyJusticeConfigurationForGameClient.ps1
+            - powershell ./Script/05.BuildWindowsGameClient.ps1
             
