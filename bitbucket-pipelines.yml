@@ -7,7 +7,9 @@ pipelines:
             - 'self.hosted'
             - 'ue5'
           script:
+            - git submodule foreach git status
             - git submodule update --init --recursive
+            - git submodule foreach git status
             - git lfs pull
             - powershell ./Script/01.CreateNewVersion.ps1
             - powershell ./Script/02.CreateBuildForGameClient.ps1
