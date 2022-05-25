@@ -2,7 +2,7 @@
 . $PSScriptRoot\00.Configuration.ps1
 
 # Dynamic Data
-$GameClientPath = $OutputWindowsGameClientFolder + "\WindowsNoEditor"
+$GameClientPath = $OutputWindowsGameClientFolder + "\Windows"
 $EntryPoint = "TutorialProject.exe"
 
 

@@ -3,7 +3,7 @@
 
 # Dynamic Data
 $Platform = "windows"
-$GameClientPath = $OutputWindowsGameClientFolder + "\WindowsNoEditor"
+$GameClientPath = $OutputWindowsGameClientFolder + "\Windows"
 $GameClientPathAbsolute = Resolve-Path -Path $GameClientPath
 
 Write-Output "---Step 6: Uploading Game Symbol for Game client---"
