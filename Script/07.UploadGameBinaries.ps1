@@ -3,7 +3,7 @@
 
 # Dynamic Data
 $GameClientPath = $OutputWindowsGameClientFolder + "\Windows"
-$EntryPoint = "TutorialProject.exe"
+$EntryPoint = "LyraGame.exe"
 
 
 Write-Output "---Step 7: Uploading Game Binaries for Game client---"

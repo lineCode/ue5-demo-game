@@ -4,7 +4,7 @@
 Write-Output "---Step 12: Upload game symbol for Game Server (Linux) Executable using WSL---"
 
 # Dynamic Data
-$GameServerPath = $OutputLinuxGameServerFolder + "\LinuxServer"
+$GameServerPath = $OutputLinuxGameServerFolder
 $Platform = "linux-server"
 
 $BlackBoxCLIAbsolute = Resolve-Path -Path $BlackBoxCLILinuxPath

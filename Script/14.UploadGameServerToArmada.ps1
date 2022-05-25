@@ -4,8 +4,8 @@
 Write-Output "---Step 14: Upload  Game Server (Linux) Binaries to Armada---"
 
 # Dynamic Data
-$GameServerPath = $OutputLinuxGameServerFolder + "\LinuxServer"
-$EntryPoint = "TutorialProjectServer.sh"
+$GameServerPath = $OutputLinuxGameServerFolder
+$EntryPoint = "LyraServer.sh"
 
 # there is a bug on DSUploader if the Path Parameter contain relative path such as /../
 $GameServerPathAbsolute = Resolve-Path -Path $GameServerPath
