@@ -2,7 +2,7 @@
 . $PSScriptRoot\00.Configuration.ps1
 
 # Dynamic Data
-$BuildName = "gameserver-linux"
+$BuildName = "${Version}-server-linux"
 
 
 Write-Output "---Step 9: name the build for Game server---"

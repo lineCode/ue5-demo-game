@@ -2,7 +2,7 @@
 . $PSScriptRoot\00.Configuration.ps1
 
 # Dynamic Data
-$BuildName = "gameclient-windows"
+$BuildName = "${Version}-client-windows"
 
 # Execute the command
 Write-Output "---Step 3: Name The Build---"
