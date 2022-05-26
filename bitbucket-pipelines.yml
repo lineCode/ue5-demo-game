@@ -1,13 +1,14 @@
 pipelines:
-  default:
+  branches:
+    master: # Pipelines that automatically run when merged to master branch
       - step:
-          name: Step 1 Create BlackBox version
-          runs-on: 
-            - 'windows'
-            - 'self.hosted'
-            - 'ue5'
+          name: Production Pipeline - Build and Deploy
+          runs-on:
+            - "windows"
+            - "self.hosted"
+            - "ue5"
           script:
-            - git submodule update --init --recursive            
+            - git submodule update --init --recursive
             - git lfs pull
             - powershell ./Script/01.CreateNewVersion.ps1
             - powershell ./Script/02.CreateBuildForGameClient.ps1
@@ -16,4 +17,16 @@ pipelines:
             - powershell ./Script/05.BuildWindowsGameClient.ps1
             - powershell ./Script/06.UploadGameSymbol.ps1
             - powershell ./Script/07.UploadGameBinaries.ps1
-            
+  custom: # Pipelines that are triggered manually
+    testCompileAll:
+      - step:
+          name: Custom Pipeline - Compile Only
+          runs-on:
+            - "windows"
+            - "self.hosted"
+            - "ue5"
+          script:
+            - git submodule update --init --recursive
+            - git lfs pull
+            - powershell ./Script/05.BuildWindowsGameClient.ps1
+            - powershell ./Script/11.BuildLinuxGameServer.ps1
