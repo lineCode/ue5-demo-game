@@ -20,7 +20,7 @@ pipelines:
   custom: # Pipelines that are triggered manually
     testCompileAll:
       - step:
-          name: Custom Pipeline - Compile Only
+          name: Custom Pipeline - Compile Only - All Platform
           runs-on:
             - "windows"
             - "self.hosted"
@@ -30,3 +30,25 @@ pipelines:
             - git lfs pull
             - powershell ./Script/05.BuildWindowsGameClient.ps1
             - powershell ./Script/11.BuildLinuxGameServer.ps1
+    testCompileGameClientOnly:
+      - step:
+          name: Custom Pipeline - Compile Only - Game Client Only
+          runs-on:
+            - "windows"
+            - "self.hosted"
+            - "ue5"
+          script:
+            - git submodule update --init --recursive
+            - git lfs pull
+            - powershell ./Script/05.BuildWindowsGameClient.ps1
+    testCompileGameServerOnly:
+      - step:
+          name: Custom Pipeline - Compile Only- Game Server Only
+          runs-on:
+            - "windows"
+            - "self.hosted"
+            - "ue5"
+          script:
+            - git submodule update --init --recursive
+            - git lfs pull            
+            - powershell ./Script/11.BuildLinuxGameServer.ps1            
