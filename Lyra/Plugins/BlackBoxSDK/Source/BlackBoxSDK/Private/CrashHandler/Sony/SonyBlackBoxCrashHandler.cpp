@@ -7,5 +7,5 @@
 
 FSonyBlackBoxCrashHandler::FSonyBlackBoxCrashHandler()
 {
-    blackbox::init_crash_handler();
+    //blackbox::init_crash_handler();
 }
