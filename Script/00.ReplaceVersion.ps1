@@ -1,5 +1,6 @@
 
-$param1=$args[0]
+# ForceVersion is comming from Bitbucket variable from bitbucket-pipelines.yml
+$param1=$env:ForceVersion
 
 if ($param1)
 {
