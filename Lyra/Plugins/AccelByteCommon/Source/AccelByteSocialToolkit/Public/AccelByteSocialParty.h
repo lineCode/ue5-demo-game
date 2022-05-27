@@ -17,10 +17,6 @@ public:
 
 protected:
 	virtual void CompareAgainst(const FOnlinePartyRepDataBase & OldData) const override;
-
-	UPROPERTY()
-	FString ServerConnectInfo;
-	EXPOSE_REP_DATA_PROPERTY(FAccelBytePartyRepData, FString, ServerConnectInfo);
 };
 
 /**
@@ -32,11 +28,9 @@ class ACCELBYTESOCIALTOOLKIT_API UAccelByteSocialParty : public USocialParty
 	GENERATED_BODY()
 public:
 	UAccelByteSocialParty();
-	
-	void SetServerConnectInfo(const FString &InConnectInfo);
+
 protected:
 	virtual FPartyPrivacySettings GetDesiredPrivacySettings() const override;
-	void HandleServerConnectInfoChanged(const FString &InConnectInfo);
 	virtual TSubclassOf<UPartyMember> GetDesiredMemberClass(bool bLocalPlayer) const override;
 	
 private:

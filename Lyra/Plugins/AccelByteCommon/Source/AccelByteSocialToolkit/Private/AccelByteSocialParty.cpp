@@ -13,8 +13,6 @@ void FAccelBytePartyRepData::CompareAgainst(const FOnlinePartyRepDataBase& OldDa
 	FPartyRepData::CompareAgainst(OldData);
 	
 	const FAccelBytePartyRepData& TypedOldData = static_cast<const FAccelBytePartyRepData&>(OldData);
-
-	CompareServerConnectInfo(TypedOldData);
 }
 
 UAccelByteSocialParty::UAccelByteSocialParty() : Super()
@@ -27,24 +25,6 @@ FPartyPrivacySettings UAccelByteSocialParty::GetDesiredPrivacySettings() const
 {
 	UAccelByteSocialParty *NonConstThis = const_cast<UAccelByteSocialParty*>(this);
 	return GetPrivacySettingsForConfig(NonConstThis->GetCurrentConfiguration());
-}
-
-void UAccelByteSocialParty::SetServerConnectInfo(const FString &InConnectInfo)
-{
-	RepData.SetServerConnectInfo(InConnectInfo);
-}
-
-void UAccelByteSocialParty::HandleServerConnectInfoChanged(const FString &InConnectInfo)
-{
-	if (InConnectInfo.IsEmpty())
-	{
-		return;
-	}
-
-	if (GetWorld() != nullptr && (GetWorld()->GetNetDriver() == nullptr || GetWorld()->URL.GetHostPortString() != InConnectInfo))
-	{
-		GEngine->SetClientTravel(GetWorld(), *InConnectInfo, TRAVEL_Absolute);
-	}
 }
 
 TSubclassOf<UPartyMember> UAccelByteSocialParty::GetDesiredMemberClass(bool bLocalPlayer) const
