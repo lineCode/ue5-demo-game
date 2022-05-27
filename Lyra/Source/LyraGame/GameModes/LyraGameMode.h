@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "ModularGameMode.h"
-#include "Models/AccelByteSessionBrowserModels.h"
 #include "LyraGameMode.generated.h"
 
 

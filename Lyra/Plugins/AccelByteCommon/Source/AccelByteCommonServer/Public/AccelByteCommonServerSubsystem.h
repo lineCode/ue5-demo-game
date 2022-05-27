@@ -33,18 +33,6 @@ enum EServerSessionType
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAccelByteSessionInfoReceivedDelegate, const FAccelByteModelsSessionBrowserData&, Response);
 
-UCLASS(BlueprintType)
-class ACCELBYTECOMMONSERVER_API UAccelByteCommonServerTask : public UObject
-{
-	GENERATED_BODY()
-public:
-
-	class UAccelByteCommonServerSubsystem* GetSubsystem() const;
-
-private:
-	EServerState ServerState {EServerState::NotStarted};
-};
-
 /** Generic Delegates when succeed or fail */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FAccelByteCommonServerGenericDelegate, bool, bSuccess, int32, ErrCode, FText, Error);
 /**

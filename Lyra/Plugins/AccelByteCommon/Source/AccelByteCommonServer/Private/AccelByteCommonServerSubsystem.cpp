@@ -12,11 +12,6 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogAccelByteCommonServer, Log, All);
 DEFINE_LOG_CATEGORY(LogAccelByteCommonServer);
 
-UAccelByteCommonServerSubsystem* UAccelByteCommonServerTask::GetSubsystem() const
-{
-	return Cast<UAccelByteCommonServerSubsystem>(GetOuter());
-}
-
 void UAccelByteCommonServerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -53,6 +48,7 @@ void UAccelByteCommonServerSubsystem::StartServerInitialization()
 
 void UAccelByteCommonServerSubsystem::TryConstructSession()
 {
+#if UE_SERVER
 	if(SessionData.Session_id.IsEmpty())
 	{
 		GetSessionIdDSM();
@@ -82,7 +78,6 @@ void UAccelByteCommonServerSubsystem::TryConstructSession()
 			);
 		}
 	}
-#if UE_SERVER
 #endif
 }
 

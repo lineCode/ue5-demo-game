@@ -334,9 +334,9 @@ void ALyraGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
 	
+#if UE_SERVER
 	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
 
-#if UE_SERVER
 	if(ServerSubsystem != nullptr)
 	{
 		UE_LOG(LogLyra, Log, TEXT("Logout. player left : %d!"), GetNumPlayers());
