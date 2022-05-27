@@ -681,23 +681,6 @@ void UCommonSessionSubsystem::OnMatchmakingComplete(FName SessionName, bool bWas
 	{
 		SearchSettingsV1.SearchRequest->Results.Empty();
 	}
-
-	if (0)
-	{
-		// Fake Sessions OSSV1
-		for (int i = 0; i < 10; i++)
-		{
-			UCommonSession_SearchResult* Entry = NewObject<UCommonSession_SearchResult>(SearchSettings->SearchRequest);
-			FOnlineSessionSearchResult FakeResult;
-			FakeResult.Session.OwningUserName = TEXT("Fake User");
-			FakeResult.Session.SessionSettings.NumPublicConnections = 10;
-			FakeResult.Session.SessionSettings.bShouldAdvertise = true;
-			FakeResult.Session.SessionSettings.bAllowJoinInProgress = true;
-			FakeResult.PingInMs=99;
-			Entry->Result = FakeResult;
-			SearchSettingsV1.SearchRequest->Results.Add(Entry);
-		}
-	}
 	
 	SearchSettingsV1.SearchRequest->NotifySearchFinished(bWasSuccessful, bWasSuccessful ? FText() : LOCTEXT("Error_FindSessionV1Failed", "Find session failed"));
 	SearchSettings.Reset();
@@ -705,7 +688,8 @@ void UCommonSessionSubsystem::OnMatchmakingComplete(FName SessionName, bool bWas
 void UCommonSessionSubsystem::OnCancelMatchmakingComplete(FName SessionName, bool bWasSuccessful)
 {
 	UE_LOG(LogCommonSession, Log, TEXT("OnCancelMatchmakingComplete(SessionName: %s, bWasSuccessful: %s)"), *SessionName.ToString(), bWasSuccessful ? TEXT("true") : TEXT("false"));
-	
+
+	// NOTE(damar): Untested!
 	CleanUpSessions();
 }
 
@@ -771,7 +755,7 @@ void UCommonSessionSubsystem::FindSessionsInternalOSSv1(ULocalPlayer* LocalPlaye
 	SearchSettings->QuerySettings.Get<FString>(SETTING_GAMEMODE, GameMode);
 	SearchSettings->QuerySettings.Get<FString>(SEARCH_MATCHMAKING_QUEUE, SearchingMM);
 	SearchSettings->QuerySettings.Get<bool>(SEARCH_DEDICATED_ONLY, bIsDedicated);
-	if(!GameMode.IsEmpty() && !GameMode.IsEmpty() && bIsDedicated)
+	if(!GameMode.IsEmpty() && bIsDedicated)
 	{
 		TSharedRef<FOnlineSessionSearch> SearchSession = ConstCastSharedRef<FCommonOnlineSearchSettingsOSSv1>(SearchSettings.ToSharedRef());
 		Sessions->StartMatchmaking(
