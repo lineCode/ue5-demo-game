@@ -336,7 +336,7 @@ void UCommonSessionSubsystem::BindOnlineDelegatesOSSv1()
 	SessionInterface->AddOnEndSessionCompleteDelegate_Handle(FOnEndSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnEndSessionComplete));
 	SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(FOnDestroySessionCompleteDelegate::CreateUObject(this, &ThisClass::OnDestroySessionComplete));
 
-	// #START @Damar
+	// #START @AccelByte Implementation
 	SessionInterface->AddOnMatchmakingCompleteDelegate_Handle(FOnMatchmakingCompleteDelegate::CreateUObject(this, &ThisClass::OnMatchmakingComplete));
 	SessionInterface->AddOnCancelMatchmakingCompleteDelegate_Handle(FOnCancelMatchmakingCompleteDelegate::CreateUObject(this, &ThisClass::OnCancelMatchmakingComplete));
 	// #END
@@ -648,7 +648,7 @@ void UCommonSessionSubsystem::OnDestroySessionComplete(FName SessionName, bool b
 }
 
 
-// #START @Damar Matchmaking Handler
+// #START @AccelByte Implementation Matchmaking Handler
 void UCommonSessionSubsystem::OnMatchmakingComplete(FName SessionName, bool bWasSuccessful)
 {
 	UE_LOG(LogCommonSession, Log, TEXT("OnMatchmakingComplete(SessionName: %s, bWasSuccessful: %s)"), *SessionName.ToString(), bWasSuccessful ? TEXT("true") : TEXT("false"));
@@ -764,7 +764,7 @@ void UCommonSessionSubsystem::FindSessionsInternalOSSv1(ULocalPlayer* LocalPlaye
 	IOnlineSessionPtr Sessions = OnlineSub->GetSessionInterface();
 	check(Sessions);
 	
-	// #START @damar
+	// #START @AccelByte Implementation
 	FString GameMode;
 	FString SearchingMM;
 	bool bIsDedicated = false;
@@ -872,7 +872,7 @@ void UCommonSessionSubsystem::QuickPlaySession(APlayerController* JoiningOrHosti
 	FindSessionsInternal(JoiningOrHostingPlayer, CreateQuickPlaySearchSettings(HostRequest, QuickPlayRequest));
 }
 
-/** #START @Damar : Starts a process to matchmaking with other player. */
+/** #START @AccelByte Implementation : Starts a process to matchmaking with other player. */
 void UCommonSessionSubsystem::MatchmakingSession(APlayerController* JoiningOrHostingPlayer, UCommonSession_HostSessionRequest* HostRequest)
 {
 	UE_LOG(LogCommonSession, Log, TEXT("Matchmaking Requested"));

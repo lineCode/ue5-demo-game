@@ -174,7 +174,7 @@ private:
 	FCommonSession_FindSessionsFinishedDynamic K2_OnSearchFinished;
 };
 
-// #START @Damar
+// #START @AccelByte Implementation
 
 /** Delegates called when a matchmaking session completes */
 DECLARE_MULTICAST_DELEGATE_TwoParams(FCommonSession_MatchmakingSessionsFinished, bool bSucceeded, const FText& ErrorMessage);
@@ -237,7 +237,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category=Session)
 	virtual void QuickPlaySession(APlayerController* JoiningOrHostingPlayer, UCommonSession_HostSessionRequest* Request);
 	
-	/** #START @Damar : Starts a process to matchmaking with other player. */
+	/** #START @AccelByte Implementation : Starts a process to matchmaking with other player. */
 	UFUNCTION(BlueprintCallable, Category=Session)
 	virtual void MatchmakingSession(APlayerController* JoiningOrHostingPlayer, UCommonSession_HostSessionRequest* HostRequest);
 
@@ -263,14 +263,14 @@ protected:
 	/** Called to fill in a session request from quick play host settings, can be overridden for game-specific behavior */
 	virtual TSharedRef<FCommonOnlineSearchSettings> CreateQuickPlaySearchSettings(UCommonSession_HostSessionRequest* Request, UCommonSession_SearchSessionRequest* QuickPlayRequest);
 
-	// #START @Damar
+	// #START @AccelByte Implementation
 	virtual TSharedRef<FCommonOnlineSearchSettings> CreateMatchmakingSearchSettings(UCommonSession_HostSessionRequest* Request, UCommonSession_SearchSessionRequest* SearchRequest);
 	// #END
 	
 	/** Called when a quick play search finishes, can be overridden for game-specific behavior */
 	virtual void HandleQuickPlaySearchFinished(bool bSucceeded, const FText& ErrorMessage, TWeakObjectPtr<APlayerController> JoiningOrHostingPlayer, TStrongObjectPtr<UCommonSession_HostSessionRequest> HostRequest);
 
-	// @Damar HandleMatchmaking Finished
+	// #START @AccelByte Implementation HandleMatchmaking Finished
 	virtual void HandleMatchmakingFinished(bool bSucceeded, const FText& ErrorMessage, TWeakObjectPtr<APlayerController> JoiningOrHostingPlayer, TStrongObjectPtr<UCommonSession_HostSessionRequest> HostRequest);
 	// #END
 	
@@ -310,7 +310,7 @@ protected:
 	void OnEndSessionComplete(FName SessionName, bool bWasSuccessful);
 	void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
 
-	// #START @Damar Matchmaking Handler
+	// #START @AccelByte Implementation Matchmaking Handler
 	void OnMatchmakingComplete(FName SessionName, bool bWasSuccessful);
 	void OnCancelMatchmakingComplete(FName SessionName, bool bWasSuccessful);
 	// #End
