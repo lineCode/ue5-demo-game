@@ -33,6 +33,14 @@
 		{
 			"Name": "OnlineServices",
 			"Enabled": true
+		},
+		{
+			"Name": "OnlineFramework",
+			"Enabled": true
+		},
+		{
+			"Name": "OnlineSubsystemAccelByte",
+			"Enabled": true
 		}
 	]
 }

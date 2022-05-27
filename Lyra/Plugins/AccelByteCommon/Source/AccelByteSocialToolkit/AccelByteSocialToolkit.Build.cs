@@ -4,16 +4,16 @@
 
 using UnrealBuildTool;
 
-public class AccelByteCommonServer : ModuleRules
+public class AccelByteSocialToolkit : ModuleRules
 {
-	public AccelByteCommonServer(ReadOnlyTargetRules Target) : base(Target)
+	public AccelByteSocialToolkit(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core", "AccelByteUe4Sdk"
+				"Core", "Party"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -28,8 +28,8 @@ public class AccelByteCommonServer : ModuleRules
 				"SlateCore",
 				"Json",
 				"JsonUtilities",
-				"AccelByteUe4Sdk",
-				"OnlineSubsystemAccelByte"
+				"Party",
+				"OnlineSubsystem"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

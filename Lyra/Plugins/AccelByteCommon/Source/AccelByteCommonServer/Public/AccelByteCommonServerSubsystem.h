@@ -23,17 +23,15 @@ enum EServerState
 	Completed			= 7
 };
 
-UCLASS(BlueprintType)
-class ACCELBYTECOMMONSERVER_API UAccelByteCommonServerTask : public UObject
+UENUM()
+enum EServerSessionType
 {
-	GENERATED_BODY()
-public:
-
-	class UAccelByteCommonServerSubsystem* GetSubsystem() const;
-
-private:
-	EServerState ServerState {EServerState::NotStarted};
+	UNKNOWN	= 0,
+	Matchmaking,
+	CustomMatch
 };
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAccelByteSessionInfoReceivedDelegate, const FAccelByteModelsSessionBrowserData&, Response);
 
 /** Generic Delegates when succeed or fail */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FAccelByteCommonServerGenericDelegate, bool, bSuccess, int32, ErrCode, FText, Error);
@@ -54,35 +52,42 @@ public:
 	UFUNCTION(BlueprintCallable, Category= "AB Common Server Subsystem")
 	virtual void StartServerInitialization();
 	
+	/**
+	 * @brief Trying to construct session.
+	 * Flow : Getting Session Id, Getting Session Info. If Joinable, register joinable
+	 */
 	UFUNCTION(BlueprintCallable, Category= "AB Common Server Subsystem")
-	virtual void ContinueServerInitialization();
-	
+	virtual void TryConstructSession();
+	/**
+	 * @brief Trying to destruct session.
+	 * Flow : Sending Shutdown to DSM, Dequeue From Joinable
+	 */
 	UFUNCTION(BlueprintCallable, Category= "AB Common Server Subsystem")
-	virtual void ServerLogin();
+	virtual void TryDestructSession();
 
-	UFUNCTION(BlueprintCallable, Category= "AB Common Server Subsystem")
-	virtual void RegisterServerToDSM();
+	virtual void AddUserToSession(const FUniqueNetIdRepl& UniqueNetId);
 
-	UFUNCTION(BlueprintCallable, Category= "AB Common Server Subsystem")
-	virtual void GetSessionIdDSM();
-
-	virtual void SendShutdownToDSM();
-	
-	UFUNCTION(BlueprintCallable, Category= "AB Common Server Subsystem")
-	virtual bool IsServerLoggedIn() const { return bIsLoggedIn; }
+	virtual void RemoveUserFromSession(const FUniqueNetIdRepl& UniqueNetId);
 
 	UFUNCTION(BlueprintCallable, Category= "AB Common Server Subsystem")
 	virtual bool IsClaimed() const { return ServerState > EServerState::NotClaimed; }
 	
-	UFUNCTION(BlueprintCallable, Category= "AB Common Server Subsystem")
-	virtual FString GetSessionId() const { return SessionId; };
+	virtual FString GetSessionId() const { return SessionData.Session_id; };
 
 	AccelByte::FServerApiClientPtr GetServerApi();
+	
+	EServerSessionType GetServerSessionType() const;
 
 	FAccelByteCommonServerGenericDelegate OnServerLoginCompleteDelegate;
 	FAccelByteCommonServerGenericDelegate OnServerRegisterToDSMCompleteDelegate;
+	FAccelByteSessionInfoReceivedDelegate OnSessionInfoReceivedDelegate;
 	
 protected:
+	virtual void ServerLogin();
+	virtual void RegisterServerToDSM();
+	virtual void GetSessionIdDSM();
+	virtual void EnqueueJoinable();
+	virtual void DequeueJoinable();
 	
 	UFUNCTION()
 	void OnServerLoginSuccess();
@@ -100,6 +105,8 @@ protected:
 	void OnGetSessionIdFailed(int32 ErrCode, FString const& ErrStr);
 	
 	UFUNCTION()
+	void OnGetSessionBySessionIdSuccess(const FAccelByteModelsSessionBrowserData& Response);
+	UFUNCTION()
 	void OnQuerySessionStatusSuccess(const FAccelByteModelsMatchmakingResult& Response);
 	UFUNCTION()
 	void OnQuerySessionStatusFailed(int32 ErrCode, FString const& ErrStr);
@@ -108,13 +115,15 @@ protected:
 	void OnEnqueueJoinableSuccess();
 	UFUNCTION()
 	void OnEnqueueJoinableFailed(int32 ErrCode, FString const& ErrStr);
+
+	UFUNCTION()
+	void OnAddPlayerFromSession(FAccelByteModelsSessionBrowserAddPlayerResponse const& Response);
+	UFUNCTION()
+	void OnRemovePlayerFromSession(FAccelByteModelsSessionBrowserAddPlayerResponse const& Response);
 	
-	
+	UFUNCTION()
 	void OnAccelByteCommonServerError(int32 ErrCode, FString const& ErrStr);
 private:
-	bool bIsLoggedIn {false};
-	bool bIsRegisteredToDSM {false};
-	bool bIsJoinable {false};
-	FString SessionId;
+	FAccelByteModelsSessionBrowserData SessionData;
 	EServerState ServerState { EServerState::NotStarted };
 };

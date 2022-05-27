@@ -44,7 +44,6 @@ public:
 	virtual bool PlayerCanRestart_Implementation(APlayerController* Player) override;
 	virtual void InitGameState() override;
 	// #START @AccelByte Implementation Login Logout
-	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 	// #END
 	//~End of AGameModeBase interface
@@ -75,4 +74,5 @@ protected:
 	void OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const FString& ExperienceIdSource);
 
 	void HandleMatchAssignmentIfNotExpectingOne();
+	
 };

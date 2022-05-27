@@ -2,16 +2,16 @@
 // This is licensed software from AccelByte Inc, for limitations
 // and restrictions contact your company contract manager.
 
-#include "AccelByteCommonGame.h"
+#include "AccelByteSocialToolkitModule.h"
 
-#define LOCTEXT_NAMESPACE "FAccelByteCommonGameModule"
+#define LOCTEXT_NAMESPACE "FAccelByteSocialToolkitModule"
 
-void FAccelByteCommonGameModule::StartupModule()
+void FAccelByteSocialToolkitModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 }
 
-void FAccelByteCommonGameModule::ShutdownModule()
+void FAccelByteSocialToolkitModule::ShutdownModule()
 {
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
@@ -19,4 +19,4 @@ void FAccelByteCommonGameModule::ShutdownModule()
 
 #undef LOCTEXT_NAMESPACE
 	
-IMPLEMENT_MODULE(FAccelByteCommonGameModule, AccelByteCommonGame)
+IMPLEMENT_MODULE(FAccelByteSocialToolkitModule, AccelByteSocialToolkit)
