@@ -1016,13 +1016,11 @@ void UCommonSessionSubsystem::HandleMatchmakingFinished(bool bSucceeded, const F
 	const int32 ResultCount = SearchSettings->SearchRequest->Results.Num();
 	UE_LOG(LogCommonSession, Log, TEXT("Matchmaking Search Finished %s (Results %d) (Error: %s)"), bSucceeded ? TEXT("Success") : TEXT("Failed"), ResultCount, *ErrorMessage.ToString());
 
-	//@TODO: We have to check if the error message is empty because some OSS layers report a failure just because there are no sessions.  Please fix with OSS 2.0.
 	if (bSucceeded || ErrorMessage.IsEmpty())
 	{
-		// Join the best search result.
+		// Matchmaking found suitable DS.
 		if (ResultCount > 0)
 		{
-			//@TODO: We should probably look at ping?  maybe some other factors to find the best.  Idk if they come pre-sorted or not.
 			for (UCommonSession_SearchResult* Result : SearchSettings->SearchRequest->Results)
 			{
 				JoinSession(JoiningOrHostingPlayer.Get(), Result);
@@ -1030,11 +1028,6 @@ void UCommonSessionSubsystem::HandleMatchmakingFinished(bool bSucceeded, const F
 			}
 		}
 	}
-	else
-	{
-		//@TODO: This sucks, need to tell someone.
-	}
-	
 }
 
 void UCommonSessionSubsystem::CleanUpSessions()
