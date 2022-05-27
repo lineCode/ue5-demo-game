@@ -86,3 +86,19 @@ pipelines:
             - git submodule update --init --recursive
             - git lfs pull
             - powershell ./Script/11.BuildLinuxGameServer.ps1
+    debugTestGameServerBuildArmada:
+      - variables:
+          - name: ForceVersion
+      - step:
+          name: Debug Pipeline - Game Server Build and Upload to Armada
+          runs-on:
+            - "windows"
+            - "self.hosted"
+            - "ue5"
+          script:
+            - git submodule update --init --recursive
+            - git lfs pull
+            - powershell ./Script/00.ReplaceVersion.ps1
+            - powershell ./Script/10.ModifyJusticeConfigurationForGameServer.ps1
+            - powershell ./Script/11.BuildLinuxGameServer.ps1
+            - powershell ./Script/14.UploadGameServerToArmada.ps1

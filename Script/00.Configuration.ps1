@@ -30,6 +30,6 @@ $GameClient_ClientSecret = $env:BB_GAME_CLIENT_CLIENT_SECRET
 $GameServer_ClientID = $env:BB_GAME_SERVER_CLIENT_ID
 $GameServer_ClientSecret = $env:BB_GAME_SERVER_CLIENT_SECRET
 
-$DSUploader_ClientID = $BB_DS_UPLOADER_CLIENT_ID
+$DSUploader_ClientID = $env:BB_DS_UPLOADER_CLIENT_ID
 
 
