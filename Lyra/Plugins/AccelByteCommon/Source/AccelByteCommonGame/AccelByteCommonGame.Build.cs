@@ -32,7 +32,8 @@ public class AccelByteCommonGame : ModuleRules
 				"JsonUtilities",
 				"AccelByteUe4Sdk",
 				"CommonUser",
-				"Party"
+				"Party",
+				"OnlineSubsystem"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
