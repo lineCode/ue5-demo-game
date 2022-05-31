@@ -18,7 +18,7 @@ using FBlackBoxCrashHandler = FXboxXDKBlackBoxCrashHandler;
 #elif (BLACKBOX_UE_XBOXONEGDK || BLACKBOX_UE_XSX)
 #    include "XboxGDK/XboxGDKBlackBoxCrashHandler.h"
 using FBlackBoxCrashHandler = FXboxGDKBlackBoxCrashHandler;
-#elif (BLACKBOX_UE_PS4 || BLACKBOX_UE_PS5)
+#elif BLACKBOX_UE_SONY
 #    include "Sony/SonyBlackBoxCrashHandler.h"
 using FBlackBoxCrashHandler = FSonyBlackBoxCrashHandler;
 #elif BLACKBOX_UE_MAC

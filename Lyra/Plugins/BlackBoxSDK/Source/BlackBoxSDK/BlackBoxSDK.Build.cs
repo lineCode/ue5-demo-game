@@ -91,7 +91,7 @@ public class BlackBoxSDK : ModuleRules
                 "Slate",
                 "SlateCore",
                 "InputCore",
-                "Http"
+                "HTTP"
             }
         );
 #else
@@ -112,7 +112,7 @@ public class BlackBoxSDK : ModuleRules
                 "Slate",
                 "SlateCore",
                 "InputCore",
-                "Http"
+                "HTTP"
             }
         );
 #endif

@@ -57,7 +57,7 @@ void FBackbufferManager::RegisterBackbufferCallback()
         return;
     }
 
-#if BLACKBOX_UE_WINDOWS || BLACKBOX_UE_XBOXONEGDK || BLACKBOX_UE_XSX
+#if BLACKBOX_UE_WINDOWS
     // Setting up delegate and callback from engine
     if (FSlateApplication::IsInitialized()) {
         OnBackBufferReadyDelegate = FSlateApplication::Get().GetRenderer()->OnBackBufferReadyToPresent().AddRaw(
@@ -87,7 +87,7 @@ void FBackbufferManager::RegisterBackbufferCallback()
 
 void FBackbufferManager::UnregisterBackbufferCallback()
 {
-#if BLACKBOX_UE_WINDOWS || BLACKBOX_UE_XBOXONEGDK || BLACKBOX_UE_XSX
+#if BLACKBOX_UE_WINDOWS
     if (FSlateApplication::IsInitialized()) {
         if (OnSlateWindowReadyDelegate.IsValid()) {
             FSlateApplication::Get().GetRenderer()->OnSlateWindowRendered().Remove(OnSlateWindowReadyDelegate);

@@ -27,6 +27,22 @@
 #    endif
 #endif
 
+#ifndef BLACKBOX_API_CALL
+#    ifdef _MSC_VER
+#        if defined BLACKBOX_BUILD_SHARED_LIBRARY
+#            define BLACKBOX_API_CALL(rtype) __declspec(dllexport) rtype __cdecl
+#        elif defined BLACKBOX_USE_SHARED_LIBRARY
+#            define BLACKBOX_API_CALL(rtype) __declspec(dllimport) rtype __cdecl
+#        else
+#            define BLACKBOX_API_CALL(rtype) rtype
+#        endif
+#    elif __GNUC__ >= 4 || defined(__clang__)
+#        define BLACKBOX_API_CALL(rtype) __attribute__((visibility("default"))) rtype
+#    else
+#        define BLACKBOX_API_CALL(rtype) rtype
+#    endif
+#endif
+
 // Platform definitions
 #if !defined BLACKBOX_WINDOWS_PLATFORM
 #    define BLACKBOX_WINDOWS_PLATFORM 0
@@ -83,7 +99,8 @@
 #        undef BLACKBOX_LINUX_PLATFORM
 #    endif
 #    define BLACKBOX_LINUX_PLATFORM 1
-#elif defined(__APPLE__) // Strictly speaking this could be either iOS or macOS but for now we only support macOS. You can use TARGET_OS_IPHONE and TARGET_OS_EMBEDDED to distinguish
+#elif defined(__APPLE__) // Strictly speaking this could be either iOS or macOS but for now we only support macOS. You
+                         // can use TARGET_OS_IPHONE and TARGET_OS_EMBEDDED to distinguish
 #    if defined BLACKBOX_MAC_PLATFORM
 #        undef BLACKBOX_MAC_PLATFORM
 #    endif

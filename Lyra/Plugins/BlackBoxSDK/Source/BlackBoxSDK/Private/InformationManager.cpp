@@ -272,6 +272,7 @@ void FInfoManager::UpdateBlackBoxClientInformation(const ProcessInformation& Pro
     blackbox::config_set_crash_folder(TCHAR_TO_UTF8(*ProcInfo_.CrashFolder));
     blackbox::config_set_crash_guid(TCHAR_TO_UTF8(*ProcInfo_.CrashGUID));
     blackbox::config_set_blackbox_helper_path(TCHAR_TO_UTF8(*ProcInfo_.BlackBoxHelperPath));
+    blackbox::config_set_blackbox_issue_reporter_path(TCHAR_TO_UTF8(*ProcInfo_.BlackBoxIssueReporterPath));
     blackbox::config_set_log_source_file_path(TCHAR_TO_UTF8(*ProcInfo_.LogSourceFilePath));
 }
 
