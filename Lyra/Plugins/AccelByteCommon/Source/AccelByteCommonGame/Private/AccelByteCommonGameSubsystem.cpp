@@ -16,7 +16,6 @@ void UAccelByteCommonGameSubsystem::Initialize(FSubsystemCollectionBase& Collect
 	UCommonUserSubsystem* UserSubsystem = GetGameInstance()->GetSubsystem<UCommonUserSubsystem>();
 	if(UserSubsystem)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Register User Initialize to Create party"));
 		UserSubsystem->OnUserInitializeComplete.AddUniqueDynamic(this, &UAccelByteCommonGameSubsystem::HandleUserInitialized);
 	}
 }

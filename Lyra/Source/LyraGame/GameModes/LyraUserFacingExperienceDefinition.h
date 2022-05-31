@@ -70,6 +70,11 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category=Experience)
 	int32 MaxPlayerCount = 16;
 
+	/** #START @AccelByte Implementation : GameMode on matchmaking service */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category=Experience)
+	FString AccelByteGameMode;
+	// #END
+
 public:
 	/** Create a request object that is used to actually start a session with these settings */
 	UFUNCTION(BlueprintCallable, BlueprintPure=false)

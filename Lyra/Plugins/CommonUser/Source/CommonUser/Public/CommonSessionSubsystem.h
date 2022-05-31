@@ -72,6 +72,11 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category=Session)
 	int32 MaxPlayerCount = 16;
 
+	/** #START @AccelByte Implementation : GameMode on matchmaking service */
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category=Experience)
+	FString AccelByteGameMode;
+	// #END
+	
 public:
 	/** Returns the maximum players that should actually be used, could be overridden in child classes */
 	virtual int32 GetMaxPlayers() const;
@@ -239,10 +244,7 @@ public:
 	
 	/** #START @AccelByte Implementation : Starts a process to matchmaking with other player. */
 	UFUNCTION(BlueprintCallable, Category=Session)
-	virtual void MatchmakingSession(APlayerController* JoiningOrHostingPlayer, UCommonSession_HostSessionRequest* HostRequest);
-
-	UFUNCTION(BlueprintCallable, Category=Session)
-	virtual UCommonSession_MatchmakingSessionRequest* CreateOnlineMatchmakingSessionRequest();
+	virtual void MatchmakingSession(APlayerController* JoiningOrHostingPlayer, UCommonSession_HostSessionRequest* HostRequest, UCommonSession_SearchSessionRequest*& OutMatchmakingSessionRequest);
 	// #END
 	
 	/** Starts process to join an existing session, if successful this will connect to the specified server */

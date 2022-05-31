@@ -681,8 +681,8 @@ void UCommonSessionSubsystem::OnMatchmakingComplete(FName SessionName, bool bWas
 	{
 		SearchSettingsV1.SearchRequest->Results.Empty();
 	}
-	
-	SearchSettingsV1.SearchRequest->NotifySearchFinished(bWasSuccessful, bWasSuccessful ? FText() : LOCTEXT("Error_FindSessionV1Failed", "Find session failed"));
+
+	SearchSettingsV1.SearchRequest->NotifySearchFinished(bWasSuccessful, bWasSuccessful ? FText() : LOCTEXT("Error_Matchmaking Failed!", "Please look at log file"));
 	SearchSettings.Reset();
 }
 void UCommonSessionSubsystem::OnCancelMatchmakingComplete(FName SessionName, bool bWasSuccessful)
@@ -755,7 +755,7 @@ void UCommonSessionSubsystem::FindSessionsInternalOSSv1(ULocalPlayer* LocalPlaye
 	SearchSettings->QuerySettings.Get<FString>(SETTING_GAMEMODE, GameMode);
 	SearchSettings->QuerySettings.Get<FString>(SEARCH_MATCHMAKING_QUEUE, SearchingMM);
 	SearchSettings->QuerySettings.Get<bool>(SEARCH_DEDICATED_ONLY, bIsDedicated);
-	if(!GameMode.IsEmpty() && bIsDedicated)
+	if(!GameMode.IsEmpty() && GameMode.Equals(SearchingMM) && bIsDedicated)
 	{
 		TSharedRef<FOnlineSessionSearch> SearchSession = ConstCastSharedRef<FCommonOnlineSearchSettingsOSSv1>(SearchSettings.ToSharedRef());
 		Sessions->StartMatchmaking(
@@ -857,56 +857,23 @@ void UCommonSessionSubsystem::QuickPlaySession(APlayerController* JoiningOrHosti
 }
 
 /** #START @AccelByte Implementation : Starts a process to matchmaking with other player. */
-void UCommonSessionSubsystem::MatchmakingSession(APlayerController* JoiningOrHostingPlayer, UCommonSession_HostSessionRequest* HostRequest)
+void UCommonSessionSubsystem::MatchmakingSession(APlayerController* JoiningOrHostingPlayer, UCommonSession_HostSessionRequest* HostRequest, UCommonSession_SearchSessionRequest*& OutMatchmakingSessionRequest)
 {
 	UE_LOG(LogCommonSession, Log, TEXT("Matchmaking Requested"));
 	
 	if (HostRequest == nullptr)
 	{
-		UE_LOG(LogCommonSession, Error, TEXT("QuickPlaySession passed a null request"));
+		UE_LOG(LogCommonSession, Error, TEXT("Matchmaking passed a null request"));
 		return;
 	}
 	
 	TStrongObjectPtr<UCommonSession_HostSessionRequest> HostRequestPtr = TStrongObjectPtr<UCommonSession_HostSessionRequest>(HostRequest);
 	TWeakObjectPtr<APlayerController> JoiningOrHostingPlayerPtr = TWeakObjectPtr<APlayerController>(JoiningOrHostingPlayer);
 
-	UCommonSession_SearchSessionRequest* MatchmakingRequest = CreateOnlineSearchSessionRequest();
-	MatchmakingRequest->OnSearchFinished.AddUObject(this, &UCommonSessionSubsystem::HandleMatchmakingFinished, JoiningOrHostingPlayerPtr, HostRequestPtr);
+	OutMatchmakingSessionRequest = CreateOnlineSearchSessionRequest();
+	OutMatchmakingSessionRequest->OnSearchFinished.AddUObject(this, &UCommonSessionSubsystem::HandleMatchmakingFinished, JoiningOrHostingPlayerPtr, HostRequestPtr);
 	
-	FindSessionsInternal(JoiningOrHostingPlayer, CreateMatchmakingSearchSettings(HostRequest, MatchmakingRequest));
-	
-	/*
-	UCommonSession_MatchmakingSessionRequest* MatchmakingSessionRequest = CreateOnlineMatchmakingSessionRequest();
-	
-	IOnlineSubsystem* OnlineSub = Online::GetSubsystem(GetWorld());
-	check(OnlineSub);
-	IOnlineSessionPtr Sessions = OnlineSub->GetSessionInterface();
-	check(Sessions);
-	IOnlinePartyPtr Party = OnlineSub->GetPartyInterface();
-	check(Party);
-
-	ULocalPlayer* LocalPlayer = (Player != nullptr) ? Player->GetLocalPlayer() : nullptr;
-	FOnlinePartyConstPtr OnlineParty = Party->GetParty(*LocalPlayer->GetPreferredUniqueNetId(), IOnlinePartySystem::GetPrimaryPartyTypeId());
-	TArray<FOnlinePartyMemberConstRef> OutMembers;
-	Party->GetPartyMembers(*LocalPlayer->GetPreferredUniqueNetId(), OnlineParty->PartyId.Get(), OutMembers);
-	TArray<FUniqueNetIdRef> PartyMemberIds;
-	for(FOnlinePartyMemberConstRef Member : OutMembers)
-	{
-		PartyMemberIds.Add(Member->GetUserId());
-	}
-
-	SearchSettings->QuerySettings.Set(SETTING_GAMEMODE, HostRequest->ModeNameForAdvertisement, EOnlineComparisonOp::Equals);
-	SearchSettings->SearchState = EOnlineAsyncTaskState::NotStarted;
-	Sessions->StartMatchmaking(PartyMemberIds, NAME_GameSession, FOnlineSessionSetting(), );*/
-}
-
-UCommonSession_MatchmakingSessionRequest* UCommonSessionSubsystem::CreateOnlineMatchmakingSessionRequest()
-{
-	/** Game-specific subsystems can override this or you can modify after creation */
-
-	UCommonSession_MatchmakingSessionRequest* NewRequest = NewObject<UCommonSession_MatchmakingSessionRequest>(this);
-
-	return NewRequest;
+	FindSessionsInternal(JoiningOrHostingPlayer, CreateMatchmakingSearchSettings(HostRequest, OutMatchmakingSessionRequest));
 }
 
 // #END
@@ -946,15 +913,10 @@ TSharedRef<FCommonOnlineSearchSettings> UCommonSessionSubsystem::CreateMatchmaki
 {
 	TSharedRef<FCommonOnlineSearchSettingsOSSv1> MatchmakingSearch = MakeShared<FCommonOnlineSearchSettingsOSSv1>(SearchRequest);
 
-	if (!Request->ModeNameForAdvertisement.IsEmpty())
-	{
-		// TODO @Damar : this should be not hardcoded! using LyraExperience to define game mode
-		FString DefaultMode = TEXT("tdm");
-		MatchmakingSearch->QuerySettings.Set(SETTING_GAMEMODE, DefaultMode, EOnlineComparisonOp::Equals);
-		MatchmakingSearch->QuerySettings.Set(SEARCH_MATCHMAKING_QUEUE, DefaultMode, EOnlineComparisonOp::Equals);
-	}
-	
+	MatchmakingSearch->QuerySettings.Set(SETTING_GAMEMODE, Request->AccelByteGameMode, EOnlineComparisonOp::Equals);
+	MatchmakingSearch->QuerySettings.Set(SEARCH_MATCHMAKING_QUEUE, Request->AccelByteGameMode, EOnlineComparisonOp::Equals);
 	MatchmakingSearch->QuerySettings.Set(SEARCH_DEDICATED_ONLY, true, EOnlineComparisonOp::Equals);
+	MatchmakingSearch->QuerySettings.Set(SETTING_MAPNAME, Request->GetMapName(), EOnlineComparisonOp::Equals);
 	return MatchmakingSearch;
 }
 
@@ -1028,6 +990,9 @@ void UCommonSessionSubsystem::HandleMatchmakingFinished(bool bSucceeded, const F
 			}
 		}
 	}
+
+	// Fail, cleanup session
+	CleanUpSessions();
 }
 
 void UCommonSessionSubsystem::CleanUpSessions()
@@ -1371,6 +1336,9 @@ void UCommonSessionSubsystem::InternalTravelToSession(const FName SessionName)
 	}
 #endif // COMMONUSER_OSSV1
 
+	// #START @AccelByte Implementation : Add options for the prefered map, it will load the map on the server after first player join.
+	//URL.Append(TEXT("?preferedMap=%s"), *SearchSettings->);
+	// #END
 	PlayerController->ClientTravel(URL, TRAVEL_Absolute);
 }
 
