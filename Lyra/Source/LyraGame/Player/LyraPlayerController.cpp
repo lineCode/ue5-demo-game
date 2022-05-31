@@ -28,6 +28,22 @@ ALyraPlayerController::ALyraPlayerController(const FObjectInitializer& ObjectIni
 #endif // #if USING_CHEAT_MANAGER
 }
 
+void ALyraPlayerController::ServerDebugCrash_Implementation()
+{
+#if UE_SERVER
+	ALyraGameMode* GameMode = Cast<ALyraGameMode>(GetWorld()->GetAuthGameMode());
+	if(GameMode)
+	{
+		GameMode->InitiateDSCrash();
+	}
+#endif
+}
+
+void ALyraPlayerController::DoServerCrash()
+{
+	ServerDebugCrash();
+}
+
 void ALyraPlayerController::PreInitializeComponents()
 {
 	Super::PreInitializeComponents();

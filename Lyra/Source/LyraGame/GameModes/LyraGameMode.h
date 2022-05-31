@@ -45,6 +45,7 @@ public:
 	virtual void InitGameState() override;
 	// #START @AccelByte Implementation Login Logout
 	virtual void Logout(AController* Exiting) override;
+	virtual void InitiateDSCrash();
 	// #END
 	//~End of AGameModeBase interface
 
@@ -60,6 +61,10 @@ public:
 
 private:
 	FOnGameModeCombinedPostLogin OnGameModeCombinedPostLoginDelegate;
+	
+	// #START @AccelByte Implementation : DSCrashFlag;
+	bool bIsInitiateDSCrash{false};
+	// #END
 
 protected:
 	//~AGameModeBase interface

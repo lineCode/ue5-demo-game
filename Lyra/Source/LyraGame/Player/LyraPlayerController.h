@@ -46,6 +46,14 @@ public:
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerCheatAll(const FString& Msg);
 
+	// #START @AccelByte Implementation : Blackbox server crash console command
+	UFUNCTION(Exec)
+	void DoServerCrash();
+	
+	UFUNCTION(Server, Reliable)
+	void ServerDebugCrash();
+	// #END
+	
 	//~AActor interface
 	virtual void PreInitializeComponents() override;
 	virtual void BeginPlay() override;
