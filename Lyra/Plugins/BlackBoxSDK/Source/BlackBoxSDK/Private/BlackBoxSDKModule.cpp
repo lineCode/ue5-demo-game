@@ -47,8 +47,12 @@
 #        include "XboxOnePlatformProcess.h"
 #    endif
 #elif BLACKBOX_UE_XBOXONEGDK
-#    include "XboxOneGDKPlatformProcess.h"
 #    include "XboxCommonPlatformCrashContext.h"
+#    if ENGINE_MAJOR_VERSION == 4
+#        include "XboxOneGDKPlatformProcess.h"
+#    else
+#        include "XboxCommonPlatformProcess.h"
+#    endif
 #elif BLACKBOX_UE_XSX
 #    include "XSXPlatformProcess.h"
 #    include "XboxCommonPlatformCrashContext.h"
@@ -74,6 +78,13 @@
 #if WITH_EDITOR
 #    include "ISettingsModule.h"
 #    include "ISettingsSection.h"
+#endif
+
+#if BLACKBOX_UE_WINDOWS
+#    ifndef WIN32_LEAN_AND_MEAN
+#        define WIN32_LEAN_AND_MEAN
+#    endif
+#    include <Windows.h>
 #endif
 
 /** How many cycles the renderthread used (excluding idle time). It's set once per frame in FViewport::Draw. */
@@ -155,6 +166,8 @@ private:
     FDelegateHandle OnPropertyChangedDelegateHandle;
     FDelegateHandle OnBackBufferReadyDelegate;
     FDelegateHandle OnViewportResizedHandle;
+    FString IssueFolder;
+    FString IssueReporterPath;
     bool ConfigValidated = false;
     bool InGameSession = false;
     friend void BlackboxSDK::SessionCreatedCallback(const blackbox::callback_http_response&, const char*);
@@ -241,7 +254,7 @@ FAccelByteBlackBoxSDKModule::FAccelByteBlackBoxSDKModule()
 #    endif
 #elif BLACKBOX_UE_XBOXONEGDK
     FString DllPath =
-        FPaths::ProjectPluginsDir() / TEXT("BlackBoxSDK/DLLs/x64/XboxOneGDK") / TEXT("BlackBoxSDK-XboxSeriesX.dll");
+        FPaths::ProjectPluginsDir() / TEXT("BlackBoxSDK/DLLs/x64/XBCommon") / TEXT("BlackBoxSDK-XboxSeriesX.dll");
 #elif BLACKBOX_UE_XSX
     FString DllPath =
         FPaths::ProjectPluginsDir() / TEXT("BlackBoxSDK/DLLs/x64/XSX") / TEXT("BlackBoxSDK-XboxSeriesX.dll");
@@ -314,7 +327,15 @@ void FAccelByteBlackBoxSDKModule::StartupModule()
     RegisterViewportResizedCallback();
     FWorldDelegates::OnWorldInitializedActors.AddRaw(this, &FAccelByteBlackBoxSDKModule::OnGameStart);
     FWorldDelegates::OnWorldCleanup.AddRaw(this, &FAccelByteBlackBoxSDKModule::OnGameStop);
-    FTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateRaw(this, &FAccelByteBlackBoxSDKModule::OnEngineTick));
+#if ENGINE_MAJOR_VERSION == 4
+    using Ticker = FTicker;
+#else
+    using Ticker = FTSTicker;
+#endif
+    Ticker::GetCoreTicker().AddTicker(FTickerDelegate::CreateRaw(this, &FAccelByteBlackBoxSDKModule::OnEngineTick));
+
+    IssueFolder = FPaths::Combine(*FPaths::ProjectSavedDir(), TEXT("Issues"));
+    IssueReporterPath = FPaths::ProjectPluginsDir() / +"BlackBoxSDK/issue_reporter/" + "x64" + "/blackbox_issue_reporter.exe";
     UE_LOG(LogBlackBox, Log, TEXT("SDK MODULE Startup Module - END"));
 }
 
@@ -580,6 +601,7 @@ void FAccelByteBlackBoxSDKModule::OnPropertyChanged(
     }
 }
 
+static short previous_trigger_state = 0;
 bool FAccelByteBlackBoxSDKModule::OnEngineTick(float TickTime)
 {
     if (blackbox::config_get_store_crash_video() && BackbufferManager != nullptr && !BackbufferManager->GetIsActive()) {
@@ -594,7 +616,17 @@ bool FAccelByteBlackBoxSDKModule::OnEngineTick(float TickTime)
         float render_thread_time_ms = FPlatformTime::ToMilliseconds(GRenderThreadTime);
         blackbox::update_profiling_basic_data(TickTime, render_thread_time_ms, game_thread_time_ms);
     }
-
+#if BLACKBOX_UE_WINDOWS
+    short trigger_state_now = GetKeyState(VK_F8) & 0x8000;
+    if ((trigger_state_now & 0x8000) == 0x8000 && (previous_trigger_state & 0x8000) == 0) {
+        UE_LOG(LogBlackBox, Warning, TEXT("CAPTURING SCREENSHOT"));
+        if (IssueFolder == "" || IssueFolder.IsEmpty()) {
+            UE_LOG(LogBlackBox, Error, TEXT("Issue Folder does not exist"));
+        }
+        blackbox::capture_screenshot(TCHAR_TO_UTF8(*IssueFolder));
+    }
+    previous_trigger_state = trigger_state_now;
+#endif
     return true;
 }
 
@@ -603,17 +635,26 @@ void FAccelByteBlackBoxSDKModule::GatherProcessInformation()
     ProcessInformation ProcInfo;
     ProcInfo.PID = FPlatformProcess::GetCurrentProcessId();
 
-    // Windows Specific helper application
+    // Windows Specific helper and issue reporter applications
 #if BLACKBOX_UE_WINDOWS
     FString arch{};
-    FString HelperExePath{};
 #    if defined _M_X64
     arch = "x64";
 #    else
     arch = "x86";
 #    endif
+
+    // Helper
+    FString HelperExePath{};
     HelperExePath = FPaths::ProjectPluginsDir() / +"BlackBoxSDK/helper/" + arch + "/blackbox_helper.exe";
     ProcInfo.BlackBoxHelperPath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*HelperExePath);
+
+    // Issue Reporter
+    FString IssueReporterExePath{};
+    IssueReporterExePath =
+        FPaths::ProjectPluginsDir() / +"BlackBoxSDK/issue_reporter/" + arch + "/blackbox_issue_reporter.exe";
+    ProcInfo.BlackBoxIssueReporterPath =
+        IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*IssueReporterExePath);
 #endif
 
     // Gather Crash directory information

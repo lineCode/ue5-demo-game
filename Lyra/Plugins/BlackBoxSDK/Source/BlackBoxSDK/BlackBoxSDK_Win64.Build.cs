@@ -20,6 +20,11 @@ public class BlackBoxSDKPlatform_Win64 : BlackBoxSDKPlatform
         return Path.Combine(PluginDir, "Helper/x64");
     }
 
+    private string GetIssueReporterDirPath()
+    {
+        return Path.Combine(PluginDir, "Issue_Reporter/x64");
+    }
+
     private string GetDLLsDirPath()
     {
         return Path.Combine(PluginDir, "DLLs/x64/Win");
@@ -74,6 +79,7 @@ public class BlackBoxSDKPlatform_Win64 : BlackBoxSDKPlatform
         {
             Path.Combine(GetHelperDirPath(), "blackbox_helper.exe"),
             Path.Combine(GetHelperDirPath(), "blackbox_helper.ini"),
+            Path.Combine(GetIssueReporterDirPath(), "blackbox_issue_reporter.exe"),
             Path.Combine(GetDLLsDirPath(), GetConfigName() + "blackbox-core.dll")
         };
     }
@@ -169,7 +175,7 @@ public class BlackBoxSDKPlatform_Win64 : BlackBoxSDKPlatform
             "NVAPI",
             "NVAftermath"
         };
-#if UE_4_26_OR_LATER && !UE_5_0_OR_LATER
+#if UE_4_26_OR_LATER
         if (Target.bBuildEditor)
         {
             string[] UTraceDependencies = {

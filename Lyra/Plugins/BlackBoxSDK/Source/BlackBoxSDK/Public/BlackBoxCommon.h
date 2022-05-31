@@ -25,17 +25,16 @@
 #        undef BLACKBOX_UE_MAC
 #    endif
 #    define BLACKBOX_UE_MAC 1
-#elif (defined(PLATFORM_XBOXONE) && PLATFORM_XBOXONE) &&                                                               \
-    (!defined(PLATFORM_XBOXONEGDK) || (defined(PLATFORM_XBOXONEGDK) && !PLATFORM_XBOXONEGDK))
-#    if defined(BLACKBOX_UE_XBOXONE)
-#        undef BLACKBOX_UE_XBOXONE
-#    endif
-#    define BLACKBOX_UE_XBOXONE 1
-#elif defined(PLATFORM_XBOXONEGDK) && PLATFORM_XBOXONEGDK
+#elif (defined(PLATFORM_XBOXONEGDK) && PLATFORM_XBOXONEGDK) || (defined(PLATFORM_XB1) && PLATFORM_XB1)
 #    if defined(BLACKBOX_UE_XBOXONEGDK)
 #        undef BLACKBOX_UE_XBOXONEGDK
 #    endif
 #    define BLACKBOX_UE_XBOXONEGDK 1
+#elif (defined(PLATFORM_XBOXONE) && PLATFORM_XBOXONE) && !BLACKBOX_UE_XBOXONEGDK
+#    if defined(BLACKBOX_UE_XBOXONE)
+#        undef BLACKBOX_UE_XBOXONE
+#    endif
+#    define BLACKBOX_UE_XBOXONE 1
 #elif defined(PLATFORM_XSX) && PLATFORM_XSX
 #    if defined(BLACKBOX_UE_XSX)
 #        undef BLACKBOX_UE_XSX

@@ -66,6 +66,7 @@ struct ConfigInformation {
 struct ProcessInformation {
     uint32 PID;
     FString BlackBoxHelperPath;
+    FString BlackBoxIssueReporterPath;
     FString CrashFolder;
     FString CrashGUID;
     FString LogSourceFilePath;

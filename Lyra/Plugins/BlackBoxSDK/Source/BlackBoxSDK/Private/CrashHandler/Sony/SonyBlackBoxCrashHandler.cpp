@@ -4,8 +4,11 @@
 
 #include "SonyBlackBoxCrashHandler.h"
 #include "accelbyte/cpp/blackbox.h"
+#include "BlackBoxCommon.h"
 
 FSonyBlackBoxCrashHandler::FSonyBlackBoxCrashHandler()
 {
-    //blackbox::init_crash_handler();
+#if BLACKBOX_UE_SONY
+    blackbox::init_crash_handler();
+#endif
 }

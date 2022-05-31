@@ -103,6 +103,13 @@ BLACKBOX_API void engine_tick(float dt);
 BLACKBOX_API void start_gather_device_info(info_gather_callback_t callback);
 
 /**
+ * @brief Dump gathered hardware and system info to a file
+ *
+ * @return error::code Describe any errors encountered
+ */
+BLACKBOX_API error::code dump_device_info_to_file(const char* file_path);
+
+/**
  * @brief Clear all pending callbacks
  *
  * @return error::code Describe any errors encountered
@@ -593,6 +600,15 @@ BLACKBOX_API error::code config_set_is_using_editor(const bool is_using_editor);
 BLACKBOX_API error::code config_set_blackbox_helper_path(const char* path);
 
 /**
+ * @brief set blackbox issue reporter path
+ *
+ * This function tells the SDK where to look for issue reporter
+ * @param path new issue reporter path
+ * @return error::code Describe any errors encountered
+ */
+BLACKBOX_API error::code config_set_blackbox_issue_reporter_path(const char* path);
+
+/**
  * @brief set crash guid
  *
  * @param crash_guid
@@ -737,7 +753,7 @@ BLACKBOX_API const char* info_get_host_user_name();
  */
 BLACKBOX_API const char* info_get_computer_name();
 
-// Crash Handling
+
 /**
  * @brief Get SDK version
  *
@@ -745,6 +761,12 @@ BLACKBOX_API const char* info_get_computer_name();
  */
 BLACKBOX_API const char* info_get_version();
 
+/**
+ * @brief NEW! Issue reporter API
+ */
+BLACKBOX_API void capture_screenshot(const char* parent_path);
+
+// Crash Handling
 #if BLACKBOX_WINDOWS_PLATFORM
 /**
  * @brief Handle the client application crash for windows platform
@@ -802,6 +824,18 @@ BLACKBOX_API bool validate_config();
  */
 
 BLACKBOX_API void notify_change_game_resolution();
+
+/**
+ * @brief Create blackbox temp directory.
+ *
+ * @return const char* Created directory path
+ */
+BLACKBOX_API const char* generate_temp_dir();
+
+/**
+ * @brief Clean generated temp directory
+ */
+BLACKBOX_API void remove_temp_dir();
 
 } // namespace blackbox
 

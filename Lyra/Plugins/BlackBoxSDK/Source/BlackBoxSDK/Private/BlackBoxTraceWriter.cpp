@@ -4,6 +4,7 @@
 
 #include "BlackBoxTraceWriter.h"
 #if BLACKBOXTRACE_ENABLED
+#include "BlackBoxLog.h"
 #include "Trace/Trace.inl"
 #include "Templates/Function.h"
 #include "HAL/PlatformTime.h"
@@ -12,7 +13,11 @@
 UE_TRACE_CHANNEL(BbxChannel);
 
 UE_TRACE_EVENT_BEGIN(BlackBoxLogging, SessionEvent, NoSync)
-    UE_TRACE_EVENT_FIELD(Trace::WideString, BlackBoxSessionID)
+#    if ENGINE_MAJOR_VERSION == 4
+        UE_TRACE_EVENT_FIELD(Trace::WideString, BlackBoxSessionID)
+#    else
+        UE_TRACE_EVENT_FIELD(UE::Trace::WideString, BlackBoxSessionID)
+#    endif
 UE_TRACE_EVENT_END()
 #endif
 

@@ -11,7 +11,11 @@
 #endif
 
 #if BLACKBOX_UE_XBOXONEGDK
-#    include "XboxOneGDKPlatformProcess.h"
+#    if ENGINE_MAJOR_VERSION == 4
+#        include "XboxOneGDKPlatformProcess.h"
+#    else
+#        include "XboxCommonPlatformProcess.h"
+#    endif
 #elif BLACKBOX_UE_XSX
 #    include "XSXPlatformProcess.h"
 #endif
