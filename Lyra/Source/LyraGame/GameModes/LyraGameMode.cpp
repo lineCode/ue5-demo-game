@@ -345,6 +345,14 @@ void ALyraGameMode::Logout(AController* Exiting)
 		{
 			UE_LOG(LogLyra, Log, TEXT("Logout. Destructing session, no player left!"));
 			ServerSubsystem->TryDestructSession();
+
+			// Wait until the last player and do crash
+			if(bIsInitiateDSCrash)
+			{
+				UObject* Invalid = nullptr;
+				// crash here
+				Invalid->GetWorld();
+			}
 		}
 		UE_LOG(LogLyra, Log, TEXT("Logout. RemoveUserFromSession"));
 		APlayerState* PlayerState = Exiting->GetPlayerState<APlayerState>();
@@ -356,6 +364,13 @@ void ALyraGameMode::Logout(AController* Exiting)
 		UE_LOG(LogLyra, Error, TEXT("Logout. RemoveUserFromSession Failed, PlayerState is not valid"));
 	}
 #endif
+}
+
+void ALyraGameMode::InitiateDSCrash()
+{
+	bIsInitiateDSCrash = true;
+	// Force all client to disconnect first!
+	GetNetDriver()->Shutdown();
 }
 
 void ALyraGameMode::OnPostLogin(AController* NewPlayer)
