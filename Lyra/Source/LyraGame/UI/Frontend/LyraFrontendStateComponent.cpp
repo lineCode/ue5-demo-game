@@ -139,6 +139,23 @@ void ULyraFrontendStateComponent::FlowStep_TryShowPressStartScreen(FControlFlowN
 		GConfig->GetBool(TEXT("AccelByteLogin"), TEXT("bEnabled"), bLoginUsingAB, GEngineIni);
 		if(bLoginUsingAB)
 		{
+			IOnlineSubsystem* DefaultSubsystem = UserSubsystem->GetOnlineSubsystem(ECommonUserOnlineContext::Default);
+			check(DefaultSubsystem)
+			IOnlineIdentityPtr IdentityPtr = DefaultSubsystem->GetIdentityInterface();
+			check(IdentityPtr)
+			FUniqueNetIdPtr FirstPlayer = IdentityPtr->GetUniquePlayerId(0);
+			if(FirstPlayer.IsValid())
+			{
+				if(IdentityPtr->GetLoginStatus(*FirstPlayer) == ELoginStatus::LoggedIn)
+				{
+					// Do Login again, but automatically.
+					InProgressPressStartScreen = SubFlow;
+					UserSubsystem->OnUserInitializeComplete.AddDynamic(this, &ULyraFrontendStateComponent::OnUserInitialized);
+					UserSubsystem->TryToInitializeForLocalPlay(0, 0, false);
+					return;
+				}
+			}
+			
 			if (UPrimaryGameLayout* RootLayout = UPrimaryGameLayout::GetPrimaryGameLayoutForPrimaryPlayer(this))
 			{
 				constexpr bool bSuspendInputUntilComplete = true;

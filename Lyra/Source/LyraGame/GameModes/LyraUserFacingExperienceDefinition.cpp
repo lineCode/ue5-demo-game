@@ -15,6 +15,7 @@ UCommonSession_HostSessionRequest* ULyraUserFacingExperienceDefinition::CreateHo
 	Result->ExtraArgs = ExtraArgs;
 	Result->ExtraArgs.Add(TEXT("Experience"), ExperienceName);
 	Result->MaxPlayerCount = MaxPlayerCount;
+	Result->AccelByteGameMode = AccelByteGameMode;
 
 	if (bRecordReplay)
 	{
