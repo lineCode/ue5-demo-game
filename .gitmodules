@@ -1,3 +1,6 @@
 [submodule "Lyra/Plugins/justice-oss"]
 	path = Lyra/Plugins/justice-oss
 	url = git@bitbucket.org:accelbyte/justice-ue4-oss.git
+[submodule "Lyra/Plugins/CommonUser"]
+	path = Lyra/Plugins/CommonUser
+	url = git@bitbucket.org:accelbyte/justice-unreal-sdk-extensions.git
