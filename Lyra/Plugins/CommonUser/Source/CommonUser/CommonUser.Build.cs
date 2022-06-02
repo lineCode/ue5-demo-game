@@ -29,7 +29,7 @@ public class CommonUser : ModuleRules
 			{
 				"Core",
 				"CoreOnline",
-				"GameplayTags",
+				"GameplayTags", "AccelByteUe4Sdk",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -55,7 +55,8 @@ public class CommonUser : ModuleRules
 				"SlateCore",
 				"ApplicationCore",
 				"InputCore",
-				"Party"
+				"Party", 
+				"OnlineSubsystemAccelByte"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

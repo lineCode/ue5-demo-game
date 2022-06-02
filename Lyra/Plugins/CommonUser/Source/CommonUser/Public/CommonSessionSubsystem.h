@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Core/AccelByteError.h"
 #include "Engine/GameInstance.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "UObject/StrongObjectPtr.h"
@@ -243,8 +244,26 @@ public:
 	virtual void QuickPlaySession(APlayerController* JoiningOrHostingPlayer, UCommonSession_HostSessionRequest* Request);
 	
 	/** #START @AccelByte Implementation : Starts a process to matchmaking with other player. */
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMatchmakingStartDelegate);
+	
 	UFUNCTION(BlueprintCallable, Category=Session)
 	virtual void MatchmakingSession(APlayerController* JoiningOrHostingPlayer, UCommonSession_HostSessionRequest* HostRequest, UCommonSession_SearchSessionRequest*& OutMatchmakingSessionRequest);
+	
+	UPROPERTY(BlueprintAssignable, Category=Session)
+	FOnMatchmakingStartDelegate OnMatchmakingStartDelegate;
+	
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMatchmakingCanceledDelegate);
+	
+	UFUNCTION(BlueprintCallable, Category=Session)
+	virtual void CancelMatchmakingSession(APlayerController* CancelPlayer);
+
+	UPROPERTY(BlueprintAssignable, Category=Session)
+	FOnMatchmakingCanceledDelegate OnMatchmakingCanceledDelegate;
+	
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMatchmakingTimeoutDelegate, const FErrorInfo&, Error);
+
+	UPROPERTY(BlueprintAssignable, Category=Session)
+	FOnMatchmakingTimeoutDelegate OnMatchmakingTimeoutDelegate;
 	// #END
 	
 	/** Starts process to join an existing session, if successful this will connect to the specified server */
@@ -313,8 +332,10 @@ protected:
 	void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
 
 	// #START @AccelByte Implementation Matchmaking Handler
+	void OnMatchmakingStarted();
 	void OnMatchmakingComplete(FName SessionName, bool bWasSuccessful);
 	void OnCancelMatchmakingComplete(FName SessionName, bool bWasSuccessful);
+	void OnMatchmakingTimeout(const FErrorInfo& Error);
 	// #End
 	
 	void OnFindSessionsComplete(bool bWasSuccessful);

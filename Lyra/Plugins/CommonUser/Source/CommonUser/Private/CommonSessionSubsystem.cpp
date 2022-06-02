@@ -2,6 +2,7 @@
 
 #include "CommonSessionSubsystem.h"
 
+#include "OnlineSessionInterfaceAccelByte.h"
 #include "GameFramework/GameModeBase.h"
 #include "Engine/AssetManager.h"
 #include "Engine/Engine.h"
@@ -339,6 +340,13 @@ void UCommonSessionSubsystem::BindOnlineDelegatesOSSv1()
 	// #START @AccelByte Implementation
 	SessionInterface->AddOnMatchmakingCompleteDelegate_Handle(FOnMatchmakingCompleteDelegate::CreateUObject(this, &ThisClass::OnMatchmakingComplete));
 	SessionInterface->AddOnCancelMatchmakingCompleteDelegate_Handle(FOnCancelMatchmakingCompleteDelegate::CreateUObject(this, &ThisClass::OnCancelMatchmakingComplete));
+	if(OnlineSub->GetSubsystemName().IsEqual(TEXT("AccelByte"), ENameCase::IgnoreCase))
+	{
+		// Subscribe Start matchmaking notif
+		FOnlineSessionAccelBytePtr SessionAccelBytePtr = StaticCastSharedPtr<FOnlineSessionAccelByte>(SessionInterface);
+		SessionAccelBytePtr->AddOnMatchmakingStartedDelegate_Handle(FOnMatchmakingStartedDelegate::CreateUObject(this, &ThisClass::OnMatchmakingStarted));
+		SessionAccelBytePtr->AddOnMatchmakingFailedDelegate_Handle(FOnMatchmakingFailedDelegate::CreateUObject(this, &ThisClass::OnMatchmakingTimeout));
+	}
 	// #END
 
 	SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FOnFindSessionsCompleteDelegate::CreateUObject(this, &ThisClass::OnFindSessionsComplete));
@@ -649,6 +657,11 @@ void UCommonSessionSubsystem::OnDestroySessionComplete(FName SessionName, bool b
 
 
 // #START @AccelByte Implementation Matchmaking Handler
+void UCommonSessionSubsystem::OnMatchmakingStarted()
+{
+	OnMatchmakingStartDelegate.Broadcast();
+}
+
 void UCommonSessionSubsystem::OnMatchmakingComplete(FName SessionName, bool bWasSuccessful)
 {
 	UE_LOG(LogCommonSession, Log, TEXT("OnMatchmakingComplete(SessionName: %s, bWasSuccessful: %s)"), *SessionName.ToString(), bWasSuccessful ? TEXT("true") : TEXT("false"));
@@ -689,7 +702,15 @@ void UCommonSessionSubsystem::OnCancelMatchmakingComplete(FName SessionName, boo
 {
 	UE_LOG(LogCommonSession, Log, TEXT("OnCancelMatchmakingComplete(SessionName: %s, bWasSuccessful: %s)"), *SessionName.ToString(), bWasSuccessful ? TEXT("true") : TEXT("false"));
 
-	// NOTE(damar): Untested!
+	OnMatchmakingCanceledDelegate.Broadcast();
+	CleanUpSessions();
+}
+
+void UCommonSessionSubsystem::OnMatchmakingTimeout(const FErrorInfo& Error)
+{
+	UE_LOG(LogCommonSession, Log, TEXT("OnMatchmakingTimeoutDelegate"));
+
+	OnMatchmakingTimeoutDelegate.Broadcast(Error);
 	CleanUpSessions();
 }
 
@@ -874,6 +895,20 @@ void UCommonSessionSubsystem::MatchmakingSession(APlayerController* JoiningOrHos
 	OutMatchmakingSessionRequest->OnSearchFinished.AddUObject(this, &UCommonSessionSubsystem::HandleMatchmakingFinished, JoiningOrHostingPlayerPtr, HostRequestPtr);
 	
 	FindSessionsInternal(JoiningOrHostingPlayer, CreateMatchmakingSearchSettings(HostRequest, OutMatchmakingSessionRequest));
+}
+
+void UCommonSessionSubsystem::CancelMatchmakingSession(APlayerController* CancelPlayer)
+{	
+	IOnlineSubsystem* OnlineSub = Online::GetSubsystem(GetWorld());
+	check(OnlineSub);
+	IOnlineSessionPtr Sessions = OnlineSub->GetSessionInterface();
+	check(Sessions);
+
+	SearchSettings.Reset();
+
+	int32 LocalPlayerIndex = CancelPlayer->GetLocalPlayer()->GetLocalPlayerIndex();
+	
+	Sessions->CancelMatchmaking(LocalPlayerIndex, NAME_GameSession);
 }
 
 // #END
