@@ -24,11 +24,6 @@
 			"Name": "AccelByteCommonGame",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "AccelByteSocialToolkit",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
 		}
 	],
 	"Plugins": [
@@ -50,6 +45,10 @@
 		},
 		{
 			"Name": "CommonUser",
+			"Enabled": true
+		},
+		{
+			"Name": "AccelByteSocialToolkit",
 			"Enabled": true
 		}
 	]
