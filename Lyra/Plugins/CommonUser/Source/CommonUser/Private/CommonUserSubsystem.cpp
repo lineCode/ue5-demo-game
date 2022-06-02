@@ -474,8 +474,7 @@ bool UCommonUserSubsystem::ShowLoginUI(FOnlineContextCache* System, TSharedRef<F
 // START @AccelByte Implementation  ManualLogin
 bool UCommonUserSubsystem::ManualLoginAccelByte(FOnlineContextCache* System, TSharedRef<FUserLoginRequest> Request,	int32 PlatformUserIndex)
 {
-	const FOnlineAccountCredentials AccountCredentials(TEXT("AccelByte"), Request->ManualLoginUserCreds.Username, Request->ManualLoginUserCreds.Password);
-	return System->IdentityInterface->Login(PlatformUserIndex, AccountCredentials);
+	return System->IdentityInterface->AutoLogin(PlatformUserIndex);
 }
 
 void UCommonUserSubsystem::SetAccelByteUserCreds(const FString& Username, const FString& Password)
@@ -1068,9 +1067,7 @@ bool UCommonUserSubsystem::TryToInitializeUser(FCommonUserInitializeParams Param
 	{
 		LocalUserInfo->InitializationState = ECommonUserInitializationState::DoingInitialLogin;
 	}
-
-	LocalUserInfo->ManualLoginUserCreds = Params.ManualLoginUserCreds;
-
+	
 	LoginLocalUser(LocalUserInfo, Params.RequestedPrivilege, Params.OnlineContext, FOnLocalUserLoginCompleteDelegate::CreateUObject(this, &ThisClass::HandleLoginForUserInitialize, Params));
 
 	return true;
@@ -1418,7 +1415,6 @@ bool UCommonUserSubsystem::LoginLocalUser(const UCommonUserInfo* UserInfo, EComm
 	}
 
 	TSharedRef<FUserLoginRequest> NewRequest = MakeShared<FUserLoginRequest>(LocalUserInfo, RequestedPrivilege, Context, MoveTemp(OnComplete));
-	NewRequest->ManualLoginUserCreds = UserInfo->ManualLoginUserCreds;
 	ActiveLoginRequests.Add(NewRequest);
 
 	// This will execute callback or start login process

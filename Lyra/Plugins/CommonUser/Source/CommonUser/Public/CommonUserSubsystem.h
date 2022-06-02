@@ -32,20 +32,6 @@ struct COMMONUSER_API FCommonUserTags
 	static FNativeGameplayTag Platform_Trait_SingleOnlineUser; // Platform.Trait.SingleOnlineUser
 };
 
-// #START @AccelByte Implementation FCommonUserCredentials 
-USTRUCT()
-struct FCommonUserCredentials
-{
-	GENERATED_BODY()
-	FCommonUserCredentials() : Username(TEXT("")), Password(TEXT("")) {}
-	FCommonUserCredentials(const FString InUsername, const FString InPassword) : Username(InUsername), Password(InPassword){}
-
-	FString Username;
-	
-	FString Password;
-};
-// #END
-
 /** Logical representation of an individual user, one of these will exist for all initialized local players */
 UCLASS(BlueprintType)
 class COMMONUSER_API UCommonUserInfo : public UObject
@@ -128,10 +114,6 @@ public:
 
 	/** Return the subsystem this is owned by */
 	class UCommonUserSubsystem* GetSubsystem() const;
-	
-	// #START @AccelByte ImplementationFCommonUserCredentials FUserLoginRequest
-	FCommonUserCredentials ManualLoginUserCreds = {TEXT(""), TEXT("")};
-	// #END
 };
 
 
@@ -187,10 +169,6 @@ struct COMMONUSER_API FCommonUserInitializeParams
 	/** If bound, call this dynamic delegate at completion of login */
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Default)
 	FCommonUserOnInitializeComplete OnUserInitializeComplete;
-
-	// #START @AccelByte ImplementationFCommonUserCredentials FUserLoginRequest
-	FCommonUserCredentials ManualLoginUserCreds = {TEXT(""), TEXT("")};
-	// #END
 };
 
 /**
@@ -447,10 +425,6 @@ protected:
 
 		/** Which local user is trying to log on */
 		TWeakObjectPtr<UCommonUserInfo> UserInfo;
-
-		// #START @AccelByte ImplementationFCommonUserCredentials FUserLoginRequest
-		FCommonUserCredentials ManualLoginUserCreds = {TEXT(""), TEXT("")};
-		// #END
 
 		/** Overall state of login request, could come from many sources */
 		ECommonUserAsyncTaskState OverallLoginState = ECommonUserAsyncTaskState::NotStarted;

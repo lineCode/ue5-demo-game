@@ -148,8 +148,10 @@ void ULyraFrontendStateComponent::FlowStep_TryShowPressStartScreen(FControlFlowN
 			{
 				if(IdentityPtr->GetLoginStatus(*FirstPlayer) == ELoginStatus::LoggedIn)
 				{
-					// Skip
-					SubFlow->ContinueFlow();
+					// Do Login again, but automatically.
+					InProgressPressStartScreen = SubFlow;
+					UserSubsystem->OnUserInitializeComplete.AddDynamic(this, &ULyraFrontendStateComponent::OnUserInitialized);
+					UserSubsystem->TryToInitializeForLocalPlay(0, 0, false);
 					return;
 				}
 			}
