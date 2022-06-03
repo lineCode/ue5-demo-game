@@ -13,7 +13,7 @@
 #pragma region Blueprintable structs
 
 UENUM(BlueprintType)
-enum class EBPInviteStatus : uint8
+enum class EABFriendSubsystemInviteStatus : uint8
 {
 	/** unknown state */
 	Unknown,
@@ -30,7 +30,7 @@ enum class EBPInviteStatus : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FBPOnlineUser
+struct FABFriendSubsystemOnlineUser
 {
 	GENERATED_BODY()
 
@@ -41,11 +41,11 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FText DisplayName;
 
-	FBPOnlineUser()
+	FABFriendSubsystemOnlineUser()
 	{
 	}
 
-	FBPOnlineUser(
+	FABFriendSubsystemOnlineUser(
 		const FUniqueNetIdRepl UserId,
 		const FText& DisplayName) :
 	UserId(UserId),
@@ -55,32 +55,32 @@ public:
 };
 
 USTRUCT(BlueprintType)
-struct FBPOnlineFriend
+struct FABFriendSubsystemOnlineFriend
 {
 	GENERATED_BODY()
 
 public:
 	UPROPERTY(BlueprintReadOnly)
-	FBPOnlineUser UserInfo;
+	FABFriendSubsystemOnlineUser UserInfo;
 
 	UPROPERTY(BlueprintReadOnly)
 	FText LoggedInPlatform;
 
 	UPROPERTY(BlueprintReadOnly)
-	EBPInviteStatus InviteStatus = EBPInviteStatus::Unknown;
+	EABFriendSubsystemInviteStatus InviteStatus = EABFriendSubsystemInviteStatus::Unknown;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsPlayingThisGame = false;
 
-	FBPOnlineFriend()
+	FABFriendSubsystemOnlineFriend()
 	{
 	}
 
-	FBPOnlineFriend(
+	FABFriendSubsystemOnlineFriend(
 		const FUniqueNetIdRepl UserId,
 		const FText& DisplayName,
 		const FText& LoggedInPlatform,
-		const EBPInviteStatus InviteStatus,
+		const EABFriendSubsystemInviteStatus InviteStatus,
 		const bool& bIsPlayingThisGame) :
 	UserInfo(UserId, DisplayName),
 	LoggedInPlatform(LoggedInPlatform),
@@ -89,7 +89,7 @@ public:
 	{
 	}
 
-	FBPOnlineFriend(
+	FABFriendSubsystemOnlineFriend(
 		const FUniqueNetIdRepl UserId,
 		const FText& DisplayName) :
 	UserInfo(UserId, DisplayName)
@@ -102,20 +102,20 @@ public:
  * This struct is a workaround for that
  */
 USTRUCT(BlueprintType)
-struct FBPOnlineFriends
+struct FABFriendSubsystemOnlineFriends
 {
 	GENERATED_BODY()
 
 public:
 	UPROPERTY(BlueprintReadWrite)
-	TArray<FBPOnlineFriend> Data;
+	TArray<FABFriendSubsystemOnlineFriend> Data;
 };
 
 #pragma endregion
 
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnCompleteGetFriendsList, FBPOnlineFriends, FriendsList);
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnCompleteQueryUserMapping, FBPOnlineUser, FoundUser);
-DECLARE_DYNAMIC_DELEGATE(FBPFriendVoidDelegate);
+DECLARE_DYNAMIC_DELEGATE_OneParam(FOnCompleteGetFriendsList, FABFriendSubsystemOnlineFriends, FriendsList);
+DECLARE_DYNAMIC_DELEGATE_OneParam(FOnCompleteQueryUserMapping, FABFriendSubsystemOnlineUser, FoundUser);
+DECLARE_DYNAMIC_DELEGATE(FFriendVoidDelegate);
 
 /**
  * Friends related services Blueprint-able wrapper
@@ -129,29 +129,29 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
 	/**
-	 * Attempt to retrieve cached Friends list (accepted and pending request). If doesn't exist, retrieve from endpoint.
+	 * Attempt to retrieve cached Friends list (accepted and pending request). If does not exist, retrieve from endpoint.
 	 *
 	 * @param LocalTargetUserNum Local player number
 	 * @param OnComplete Delegate that will be called upon completion
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void BP_GetFriendsList(int32 LocalTargetUserNum, FOnCompleteGetFriendsList OnComplete);
+	void GetFriendsList(int32 LocalTargetUserNum, FOnCompleteGetFriendsList OnComplete);
 
 	/**
 	 * Search AccelByte user by the exact username.
 	 *
 	 * @param LocalTargetUserNum Local player number
-	 * @param Username Username to be search
+	 * @param DisplayName Username to be search
 	 * @param OnComplete Delegate that will be called upon completion
 	 * @param OnNotFound Delegate that will be called upon user not found
 	 * @param bHideSelf Whether to show this user's in search result or not
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void BP_SearchUserByExactUsername(
+	void SearchUserByExactDisplayName(
 		int32 LocalTargetUserNum,
-		FString Username,
+		FString DisplayName,
 		FOnCompleteQueryUserMapping OnComplete,
-		FBPFriendVoidDelegate OnNotFound,
+		FFriendVoidDelegate OnNotFound,
 		bool bHideSelf = true);
 
 	/**
@@ -161,7 +161,7 @@ public:
 	 * @param TargetUniqueId Target user Unique Id
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void BP_SendFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl TargetUniqueId);
+	void SendFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl TargetUniqueId);
 
 	/**
 	 * Accept pending received friend request.
@@ -170,7 +170,7 @@ public:
 	 * @param SenderUniqueId Friend request sender Unique Id
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void BP_AcceptFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl SenderUniqueId);
+	void AcceptFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl SenderUniqueId);
 
 	/**
 	 * Reject pending received friend request.
@@ -179,7 +179,7 @@ public:
 	 * @param SenderUniqueId Friend request sender Unique Id
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void BP_RejectFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl SenderUniqueId);
+	void RejectFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl SenderUniqueId);
 
 	/**
 	 * Unfriend or cancel sent friend request to a user.
@@ -188,7 +188,7 @@ public:
 	 * @param TargetUniqueId Target user Unique Id
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void BP_RemoveFriend(int32 LocalTargetUserNum, FUniqueNetIdRepl TargetUniqueId);
+	void RemoveFriend(int32 LocalTargetUserNum, FUniqueNetIdRepl TargetUniqueId);
 
 	/**
 	 * Set OnFriendListChange delegate. Will be called everytime Friends list changes.
@@ -197,13 +197,13 @@ public:
 	 * @param OnChange Delegate that will be executed
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void BP_OnFriendListChange(int32 LocalTargetUserNum, FBPFriendVoidDelegate OnChange);
+	void OnFriendListChange(int32 LocalTargetUserNum, FFriendVoidDelegate OnChange);
 
 private:
 
-	static TArray<FBPOnlineFriend> BlueprintableFriendsDataConversion(TArray<TSharedRef<FOnlineFriend>>& FriendsList);
+	static TArray<FABFriendSubsystemOnlineFriend> BlueprintableFriendsDataConversion(TArray<TSharedRef<FOnlineFriend>>& FriendsList);
 
-	static EBPInviteStatus BlueprintableInviteStatusConversion(EInviteStatus::Type InviteStatus);
+	static EABFriendSubsystemInviteStatus BlueprintableInviteStatusConversion(EInviteStatus::Type InviteStatus);
 
 	IOnlineSubsystem* OSS;
 };

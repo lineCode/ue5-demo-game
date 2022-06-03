@@ -15,7 +15,7 @@ void UAccelByteCommonFriendSubsystem::Initialize(FSubsystemCollectionBase& Colle
 	OSS = Online::GetSubsystem(GetWorld());
 }
 
-void UAccelByteCommonFriendSubsystem::BP_GetFriendsList(int32 LocalTargetUserNum, FOnCompleteGetFriendsList OnComplete)
+void UAccelByteCommonFriendSubsystem::GetFriendsList(int32 LocalTargetUserNum, FOnCompleteGetFriendsList OnComplete)
 {
 	if (OSS)
 	{
@@ -25,7 +25,7 @@ void UAccelByteCommonFriendSubsystem::BP_GetFriendsList(int32 LocalTargetUserNum
 		TArray<TSharedRef<FOnlineFriend>> OutFriendsList;
 		if(FriendInf->GetFriendsList(LocalTargetUserNum, "", OutFriendsList))
 		{
-			FBPOnlineFriends OnlineFriends;
+			FABFriendSubsystemOnlineFriends OnlineFriends;
 			OnlineFriends.Data = BlueprintableFriendsDataConversion(OutFriendsList);
 			OnComplete.ExecuteIfBound(OnlineFriends);
 		}
@@ -36,7 +36,7 @@ void UAccelByteCommonFriendSubsystem::BP_GetFriendsList(int32 LocalTargetUserNum
 				[OnComplete, FriendInf, LocalTargetUserNum](int32 LocalUserNum, bool bWasSuccessful, const FString& ListName, const FString& ErrorStr)
 				{
 					TArray<TSharedRef<FOnlineFriend>> OutFriendsList;
-					FBPOnlineFriends OnlineFriends;
+					FABFriendSubsystemOnlineFriends OnlineFriends;
 					FriendInf->GetFriendsList(LocalTargetUserNum, "", OutFriendsList);
 					OnlineFriends.Data = BlueprintableFriendsDataConversion(OutFriendsList);
 					OnComplete.ExecuteIfBound(OnlineFriends);
@@ -45,11 +45,11 @@ void UAccelByteCommonFriendSubsystem::BP_GetFriendsList(int32 LocalTargetUserNum
 	}
 }
 
-void UAccelByteCommonFriendSubsystem::BP_SearchUserByExactUsername(
+void UAccelByteCommonFriendSubsystem::SearchUserByExactDisplayName(
 	int32 LocalTargetUserNum,
-	FString Username,
+	FString DisplayName,
 	FOnCompleteQueryUserMapping OnComplete,
-	FBPFriendVoidDelegate OnNotFound, bool bHideSelf)
+	FFriendVoidDelegate OnNotFound, bool bHideSelf)
 {
 	if (OSS)
 	{
@@ -61,7 +61,7 @@ void UAccelByteCommonFriendSubsystem::BP_SearchUserByExactUsername(
 		const FUniqueNetIdPtr LocalPlayerUserId = IdentityInf->GetUniquePlayerId(LocalTargetUserNum);
 		check(LocalPlayerUserId);
 
-		UserInf->QueryUserIdMapping(*LocalPlayerUserId, Username,
+		UserInf->QueryUserIdMapping(*LocalPlayerUserId, DisplayName,
 			IOnlineUser::FOnQueryUserMappingComplete::CreateWeakLambda(this,
 				[OnNotFound, OnComplete, LocalPlayerUserId, bHideSelf](
 					bool bWasSuccessful,
@@ -78,7 +78,7 @@ void UAccelByteCommonFriendSubsystem::BP_SearchUserByExactUsername(
 						 * If more information is needed,
 						 * use QueryUserInfoj > set OnQueryUserInfoCompleteDelegates > GetUserInfo
 						 */
-						FBPOnlineUser BPOnlineUser(FoundUserId.AsShared(), FText::FromString(Username));
+						const FABFriendSubsystemOnlineUser BPOnlineUser(FoundUserId.AsShared(), FText::FromString(Username));
 						OnComplete.ExecuteIfBound(BPOnlineUser);
 					}
 					else
@@ -89,11 +89,11 @@ void UAccelByteCommonFriendSubsystem::BP_SearchUserByExactUsername(
 	}
 }
 
-void UAccelByteCommonFriendSubsystem::BP_SendFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl TargetUniqueId)
+void UAccelByteCommonFriendSubsystem::SendFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl TargetUniqueId)
 {
 	if (OSS)
 	{
-		IOnlineFriendsPtr FriendsInf = OSS->GetFriendsInterface();
+		const IOnlineFriendsPtr FriendsInf = OSS->GetFriendsInterface();
 		check(FriendsInf);
 
 		const FUniqueNetId* UniqueNetId = TargetUniqueId.GetUniqueNetId().Get();
@@ -102,11 +102,11 @@ void UAccelByteCommonFriendSubsystem::BP_SendFriendRequest(int32 LocalTargetUser
 	}
 }
 
-void UAccelByteCommonFriendSubsystem::BP_AcceptFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl SenderUniqueId)
+void UAccelByteCommonFriendSubsystem::AcceptFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl SenderUniqueId)
 {
 	if (OSS)
 	{
-		IOnlineFriendsPtr FriendsInf = OSS->GetFriendsInterface();
+		const IOnlineFriendsPtr FriendsInf = OSS->GetFriendsInterface();
 		check(FriendsInf);
 
 		const FUniqueNetId* UniqueNetId = SenderUniqueId.GetUniqueNetId().Get();
@@ -115,11 +115,11 @@ void UAccelByteCommonFriendSubsystem::BP_AcceptFriendRequest(int32 LocalTargetUs
 	}
 }
 
-void UAccelByteCommonFriendSubsystem::BP_RejectFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl SenderUniqueId)
+void UAccelByteCommonFriendSubsystem::RejectFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl SenderUniqueId)
 {
 	if (OSS)
 	{
-		IOnlineFriendsPtr FriendsInf = OSS->GetFriendsInterface();
+		const IOnlineFriendsPtr FriendsInf = OSS->GetFriendsInterface();
 		check(FriendsInf);
 
 		const FUniqueNetId* UniqueNetId = SenderUniqueId.GetUniqueNetId().Get();
@@ -127,11 +127,11 @@ void UAccelByteCommonFriendSubsystem::BP_RejectFriendRequest(int32 LocalTargetUs
 	}
 }
 
-void UAccelByteCommonFriendSubsystem::BP_RemoveFriend(int32 LocalTargetUserNum, FUniqueNetIdRepl TargetUniqueId)
+void UAccelByteCommonFriendSubsystem::RemoveFriend(int32 LocalTargetUserNum, FUniqueNetIdRepl TargetUniqueId)
 {
 	if (OSS)
 	{
-		IOnlineFriendsPtr FriendsInf = OSS->GetFriendsInterface();
+		const IOnlineFriendsPtr FriendsInf = OSS->GetFriendsInterface();
 		check(FriendsInf);
 
 		const FUniqueNetId* UniqueNetId = TargetUniqueId.GetUniqueNetId().Get();
@@ -139,11 +139,11 @@ void UAccelByteCommonFriendSubsystem::BP_RemoveFriend(int32 LocalTargetUserNum, 
 	}
 }
 
-void UAccelByteCommonFriendSubsystem::BP_OnFriendListChange(int32 LocalTargetUserNum, FBPFriendVoidDelegate OnChange)
+void UAccelByteCommonFriendSubsystem::OnFriendListChange(int32 LocalTargetUserNum, FFriendVoidDelegate OnChange)
 {
 	if (OSS)
 	{
-		IOnlineFriendsPtr FriendsInf = OSS->GetFriendsInterface();
+		const IOnlineFriendsPtr FriendsInf = OSS->GetFriendsInterface();
 		check(FriendsInf);
 
 		FriendsInf->ClearOnFriendsChangeDelegates(LocalTargetUserNum, this);
@@ -154,13 +154,13 @@ void UAccelByteCommonFriendSubsystem::BP_OnFriendListChange(int32 LocalTargetUse
 	}
 }
 
-TArray<FBPOnlineFriend> UAccelByteCommonFriendSubsystem::BlueprintableFriendsDataConversion(
+TArray<FABFriendSubsystemOnlineFriend> UAccelByteCommonFriendSubsystem::BlueprintableFriendsDataConversion(
 	TArray<TSharedRef<FOnlineFriend>>& FriendsList)
 {
-	TArray<FBPOnlineFriend> FriendsListResult;
+	TArray<FABFriendSubsystemOnlineFriend> FriendsListResult;
 	for (const TSharedRef<FOnlineFriend>& Friend : FriendsList)
 	{
-		FBPOnlineFriend BPFriend(
+		FABFriendSubsystemOnlineFriend BPFriend(
 			Friend->GetUserId(),
 			FText::FromString(Friend->GetDisplayName()),
 			FText::FromString(Friend->GetPresence().GetPlatform()),
@@ -172,23 +172,23 @@ TArray<FBPOnlineFriend> UAccelByteCommonFriendSubsystem::BlueprintableFriendsDat
 	return FriendsListResult;
 }
 
-EBPInviteStatus UAccelByteCommonFriendSubsystem::BlueprintableInviteStatusConversion(EInviteStatus::Type InviteStatus)
+EABFriendSubsystemInviteStatus UAccelByteCommonFriendSubsystem::BlueprintableInviteStatusConversion(EInviteStatus::Type InviteStatus)
 {
 	switch (InviteStatus)
 	{
 	case EInviteStatus::Type::Unknown:
-		return EBPInviteStatus::Unknown;
+		return EABFriendSubsystemInviteStatus::Unknown;
 	case EInviteStatus::Type::Accepted:
-		return EBPInviteStatus::Accepted;
+		return EABFriendSubsystemInviteStatus::Accepted;
 	case EInviteStatus::Type::PendingInbound:
-		return EBPInviteStatus::PendingInbound;
+		return EABFriendSubsystemInviteStatus::PendingInbound;
 	case EInviteStatus::Type::PendingOutbound:
-		return EBPInviteStatus::PendingOutbound;
+		return EABFriendSubsystemInviteStatus::PendingOutbound;
 	case EInviteStatus::Type::Blocked:
-		return EBPInviteStatus::Blocked;
+		return EABFriendSubsystemInviteStatus::Blocked;
 	case EInviteStatus::Type::Suggested:
-		return EBPInviteStatus::Suggested;
+		return EABFriendSubsystemInviteStatus::Suggested;
 	default:
-		return EBPInviteStatus::Unknown;
+		return EABFriendSubsystemInviteStatus::Unknown;
 	}
 }
