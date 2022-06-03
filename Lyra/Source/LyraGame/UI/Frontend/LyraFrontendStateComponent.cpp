@@ -139,21 +139,16 @@ void ULyraFrontendStateComponent::FlowStep_TryShowPressStartScreen(FControlFlowN
 		GConfig->GetBool(TEXT("AccelByteLogin"), TEXT("bEnabled"), bLoginUsingAB, GEngineIni);
 		if(bLoginUsingAB)
 		{
-			IOnlineSubsystem* DefaultSubsystem = UserSubsystem->GetOnlineSubsystem(ECommonUserOnlineContext::Default);
-			check(DefaultSubsystem)
-			IOnlineIdentityPtr IdentityPtr = DefaultSubsystem->GetIdentityInterface();
-			check(IdentityPtr)
-			FUniqueNetIdPtr FirstPlayer = IdentityPtr->GetUniquePlayerId(0);
-			if(FirstPlayer.IsValid())
+			FOnlineAccountCredentials Credentials;
+			FParse::Value(FCommandLine::Get(), TEXT("-AUTH_TYPE="), Credentials.Type);
+			FParse::Value(FCommandLine::Get(), TEXT("-AUTH_LOGIN="), Credentials.Id);
+			FParse::Value(FCommandLine::Get(), TEXT("-AUTH_PASSWORD="), Credentials.Token);
+			if(!Credentials.Type.IsEmpty() && !Credentials.Id.IsEmpty() && !Credentials.Token.IsEmpty())
 			{
-				if(IdentityPtr->GetLoginStatus(*FirstPlayer) == ELoginStatus::LoggedIn)
-				{
-					// Do Login again, but automatically.
-					InProgressPressStartScreen = SubFlow;
-					UserSubsystem->OnUserInitializeComplete.AddDynamic(this, &ULyraFrontendStateComponent::OnUserInitialized);
-					UserSubsystem->TryToInitializeForLocalPlay(0, 0, false);
-					return;
-				}
+				InProgressPressStartScreen = SubFlow;
+				UserSubsystem->OnUserInitializeComplete.AddDynamic(this, &ULyraFrontendStateComponent::OnUserInitialized);
+				UserSubsystem->TryToInitializeForLocalPlay(0, 0, false);
+				return;
 			}
 			
 			if (UPrimaryGameLayout* RootLayout = UPrimaryGameLayout::GetPrimaryGameLayoutForPrimaryPlayer(this))
