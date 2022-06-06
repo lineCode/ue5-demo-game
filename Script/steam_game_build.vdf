@@ -1,0 +1,22 @@
+"AppBuild"
+{
+	"AppID" "1889240" // your AppID
+	"Desc" "Game Version is <<VERSION_PLACEHOLDER>>" // internal description for this build
+
+	// We are going to set current directory to <PROJECT_ROOT>\Artifact\WindowGameClient
+	"ContentRoot" "." // root content folder, relative to location of this file
+	"BuildOutput" "." // build output folder for build logs and build cache files
+
+	"Depots"
+	{
+		"1889241" // your DepotID
+		{
+			"FileMapping"
+			{
+				"LocalPath" ".\Windows\*" // all files from contentroot folder
+				"DepotPath" "." // mapped into the root of the depot
+				"recursive" "1" // include all subfolders
+			}
+		}
+	}
+}

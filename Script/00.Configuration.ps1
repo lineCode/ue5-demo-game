@@ -33,3 +33,8 @@ $GameServer_ClientSecret = $env:BB_GAME_SERVER_CLIENT_SECRET
 $DSUploader_ClientID = $env:BB_DS_UPLOADER_CLIENT_ID
 
 
+# Steam credentials
+$SteamCDMPath = $env:BB_STEAM_CMD_PATH
+$SteamAccoutName = $env:BB_STEAM_ACCOUNT_NAME
+$SteamAccoutPassword = $env:BB_STEAM_ACCOUNT_PASSWORD
+
