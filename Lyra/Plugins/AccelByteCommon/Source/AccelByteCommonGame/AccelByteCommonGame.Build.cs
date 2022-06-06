@@ -33,8 +33,7 @@ public class AccelByteCommonGame : ModuleRules
 				"AccelByteUe4Sdk",
 				"CommonUser",
 				"Party",
-				"OnlineSubsystem",
-				"AccelByteSocialToolkit"
+				"OnlineSubsystem"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

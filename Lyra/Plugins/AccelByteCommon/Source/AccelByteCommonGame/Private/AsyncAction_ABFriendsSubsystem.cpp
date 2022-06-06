@@ -5,16 +5,18 @@
 
 #include "Online.h"
 #include "OnlineSubsystemUtils.h"
+#include "SocialToolkit.h"
 
-UAsyncAction_ABFriendsSubsystemQueryCachedList* UAsyncAction_ABFriendsSubsystemQueryCachedList::QueryCachedFriendsList(
+UAsyncAction_ABFriendsSubsystemGetFriendList* UAsyncAction_ABFriendsSubsystemGetFriendList::GetFriendList(
 	ULocalPlayer* LocalPlayer)
 {
-	UAsyncAction_ABFriendsSubsystemQueryCachedList* Action =
-		NewObject<UAsyncAction_ABFriendsSubsystemQueryCachedList>();
+	UAsyncAction_ABFriendsSubsystemGetFriendList* Action =
+		NewObject<UAsyncAction_ABFriendsSubsystemGetFriendList>();
 
 	if (LocalPlayer)
 	{
-		Action->SocialToolkit = Cast<UAccelByteSocialToolkit>(USocialToolkit::GetToolkitForPlayer(LocalPlayer));
+		Action->SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer);
+		Action->LocalPlayerIndex = LocalPlayer->GetLocalPlayerIndex();
 	}
 	else
 	{
@@ -24,26 +26,44 @@ UAsyncAction_ABFriendsSubsystemQueryCachedList* UAsyncAction_ABFriendsSubsystemQ
 	return Action;
 }
 
-void UAsyncAction_ABFriendsSubsystemQueryCachedList::Activate()
+void UAsyncAction_ABFriendsSubsystemGetFriendList::Activate()
 {
 	Super::Activate();
 
 	if (SocialToolkit.IsValid())
 	{
-		SocialToolkit->OnQueryFriendsListSuccessDelegate =
-			TDelegate<void(TArray<USocialUser*>)>::CreateWeakLambda(this, [this]
-				(TArray<USocialUser*> SocialUsers)
-			{
-				FABFriendSubsystemOnlineFriends OnlineFriends;
-				OnlineFriends.Data = UAccelByteCommonFriendSubsystem::BlueprintableSocialUserListConversion(SocialUsers);
-				OnComplete.Broadcast(OnlineFriends);
-			});
-		SocialToolkit->QueryFriendsList();
+		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
+		check(OSS);
+
+		const IOnlineFriendsPtr FriendsPtr = OSS->GetFriendsInterface();
+		check(FriendsPtr);
+
+		TArray<TSharedRef<FOnlineFriend>> OutFriend;
+		if (!FriendsPtr->GetFriendsList(LocalPlayerIndex, "", OutFriend))
+		{
+			FriendsPtr->ReadFriendsList(LocalPlayerIndex, "", FOnReadFriendsListComplete::CreateWeakLambda(this,
+				[this](int32 LocalUserNum, bool bWasSuccessful, const FString& ListName, const FString& ErrorStr)
+				{
+					TriggerAction();
+				}));
+		}
+		else
+		{
+			TriggerAction();
+		}
 	}
 	else
 	{
 		SetReadyToDestroy();
 	}
+}
+
+void UAsyncAction_ABFriendsSubsystemGetFriendList::TriggerAction() const
+{
+	FABFriendSubsystemOnlineFriends OnlineFriends;
+	const TArray<USocialUser*> SocialUsers = SocialToolkit->GetAllUsers();
+	OnlineFriends.Data = UAccelByteCommonFriendSubsystem::BlueprintableSocialUserListConversion(SocialUsers);
+	OnComplete.Broadcast(OnlineFriends);
 }
 
 UAsyncAction_ABFriendsSubsystemSearchUser* UAsyncAction_ABFriendsSubsystemSearchUser::SearchUserByExactDisplayName(

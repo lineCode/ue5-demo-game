@@ -8,7 +8,7 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
 #include "SocialManager.h"
-#include "AccelByteSocialToolkit/Public/AccelByteSocialToolkit.h"
+#include "SocialToolkit.h"
 #include "Party/PartyMember.h"
 #include "Party/SocialParty.h"
 
@@ -19,8 +19,7 @@ void UAccelByteCommonFriendSubsystem::Initialize(FSubsystemCollectionBase& Colle
 
 void UAccelByteCommonFriendSubsystem::GetLocalUserDisplayNameAndPlatform(FString& DisplayName, FString& Platform, ULocalPlayer* LocalPlayer)
 {
-	if (const UAccelByteSocialToolkit* SocialToolkit =
-		Cast<UAccelByteSocialToolkit>(USocialToolkit::GetToolkitForPlayer(LocalPlayer)))
+	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
 		DisplayName = SocialToolkit->GetLocalUser().GetDisplayName(ESocialSubsystem::Primary);
 		Platform = SocialToolkit->GetLocalUser().GetCurrentPlatform().ToString();
@@ -29,8 +28,7 @@ void UAccelByteCommonFriendSubsystem::GetLocalUserDisplayNameAndPlatform(FString
 
 void UAccelByteCommonFriendSubsystem::SendFriendRequest(ULocalPlayer* LocalPlayer, FString DisplayName)
 {
-	if (const UAccelByteSocialToolkit* SocialToolkit =
-		Cast<UAccelByteSocialToolkit>(USocialToolkit::GetToolkitForPlayer(LocalPlayer)))
+	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
 		SocialToolkit->TrySendFriendInvite(DisplayName);
 	}
@@ -38,8 +36,7 @@ void UAccelByteCommonFriendSubsystem::SendFriendRequest(ULocalPlayer* LocalPlaye
 
 void UAccelByteCommonFriendSubsystem::AcceptFriendRequest(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl SenderUniqueId)
 {
-	if (const UAccelByteSocialToolkit* SocialToolkit =
-		Cast<UAccelByteSocialToolkit>(USocialToolkit::GetToolkitForPlayer(LocalPlayer)))
+	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
 		const USocialUser* SocialUser = SocialToolkit->FindUser(SenderUniqueId);
 		check(SocialUser);
@@ -50,8 +47,7 @@ void UAccelByteCommonFriendSubsystem::AcceptFriendRequest(ULocalPlayer* LocalPla
 
 void UAccelByteCommonFriendSubsystem::RejectFriendRequest(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl SenderUniqueId)
 {
-	if (const UAccelByteSocialToolkit* SocialToolkit =
-		Cast<UAccelByteSocialToolkit>(USocialToolkit::GetToolkitForPlayer(LocalPlayer)))
+	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
 		const USocialUser* SocialUser = SocialToolkit->FindUser(SenderUniqueId);
 		check(SocialUser);
@@ -62,8 +58,7 @@ void UAccelByteCommonFriendSubsystem::RejectFriendRequest(ULocalPlayer* LocalPla
 
 void UAccelByteCommonFriendSubsystem::Unfriend(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId)
 {
-	if (const UAccelByteSocialToolkit* SocialToolkit =
-		Cast<UAccelByteSocialToolkit>(USocialToolkit::GetToolkitForPlayer(LocalPlayer)))
+	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
 		const USocialUser* SocialUser = SocialToolkit->FindUser(TargetUniqueId);
 		check(SocialUser);
@@ -74,8 +69,7 @@ void UAccelByteCommonFriendSubsystem::Unfriend(ULocalPlayer* LocalPlayer, FUniqu
 
 void UAccelByteCommonFriendSubsystem::CancelSentFriendRequest(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId)
 {
-	if (const UAccelByteSocialToolkit* SocialToolkit =
-		Cast<UAccelByteSocialToolkit>(USocialToolkit::GetToolkitForPlayer(LocalPlayer)))
+	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
 		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
 		check(OSS);
@@ -89,15 +83,10 @@ void UAccelByteCommonFriendSubsystem::CancelSentFriendRequest(ULocalPlayer* Loca
 }
 
 void UAccelByteCommonFriendSubsystem::OnFriendsListChange(
-	ULocalPlayer* LocalPlayer, FFriendVoidDelegate OnListChange, FFriendVoidDelegate OnPresenceChange)
+	ULocalPlayer* LocalPlayer, FFriendVoidDelegate OnListChange)
 {
-	if (UAccelByteSocialToolkit* SocialToolkit =
-		Cast<UAccelByteSocialToolkit>(USocialToolkit::GetToolkitForPlayer(LocalPlayer)))
+	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
-		/*SocialToolkit->OnDeleteFriendCompleteDelegate = TDelegate<void()>::CreateWeakLambda(this, [OnListChange]()
-		{
-			OnListChange.ExecuteIfBound();
-		});*/
 		SocialToolkit->OnFriendInviteReceived().AddWeakLambda(this, [OnListChange]
 			(USocialUser& SocialUser, ESocialSubsystem Subsystem)
 		{
@@ -114,11 +103,6 @@ void UAccelByteCommonFriendSubsystem::OnFriendsListChange(
 			OnListChange.ExecuteIfBound();
 		});
 
-		SocialToolkit->OnFriendPresenceChangeDelegate = TDelegate<void()>::CreateWeakLambda(this, [OnPresenceChange]()
-		{
-			OnPresenceChange.ExecuteIfBound();
-		});
-
 		/**
 		 * Social Toolkit does not cover On Receieved Friend Request accepted and rejected
 		 * This is used as a workaround for that
@@ -131,22 +115,19 @@ void UAccelByteCommonFriendSubsystem::OnFriendsListChange(
 	}
 }
 
-TArray<FABFriendSubsystemOnlineFriend> UAccelByteCommonFriendSubsystem::BlueprintableFriendsDataConversion(
-	TArray<TSharedRef<FOnlineFriend>>& FriendsList)
+void UAccelByteCommonFriendSubsystem::OnUserPresenceChange(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId,
+	FFriendPresenceChange OnPresenceChange)
 {
-	TArray<FABFriendSubsystemOnlineFriend> FriendsListResult;
-	for (const TSharedRef<FOnlineFriend>& Friend : FriendsList)
+	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
-		FABFriendSubsystemOnlineFriend BPFriend(
-			Friend->GetUserId(),
-			Friend->GetDisplayName(),
-			Friend->GetPresence().GetPlatform(),
-			BlueprintableInviteStatusConversion(Friend->GetInviteStatus()),
-			Friend->GetPresence().bIsPlayingThisGame);
-		FriendsListResult.Add(BPFriend);
-	}
+		USocialUser* SocialUser = SocialToolkit->FindUser(TargetUniqueId);
 
-	return FriendsListResult;
+		SocialUser->OnUserPresenceChanged().AddWeakLambda(this,
+			[OnPresenceChange, SocialUser](ESocialSubsystem SocialSubsystem)
+		{
+			OnPresenceChange.ExecuteIfBound(SocialUser->IsPlayingThisGame(), SocialUser->GetCurrentPlatform());
+		});
+	}
 }
 
 TArray<FABFriendSubsystemOnlineFriend> UAccelByteCommonFriendSubsystem::BlueprintableSocialUserListConversion(

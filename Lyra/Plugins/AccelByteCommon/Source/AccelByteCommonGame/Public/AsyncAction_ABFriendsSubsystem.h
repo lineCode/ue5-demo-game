@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AccelByteCommonFriendSubsystem.h"
-#include "AccelByteSocialToolkit/Public/AccelByteSocialToolkit.h"
+#include "OnlineSubsystem.h"
 #include "Kismet/BlueprintAsyncActionBase.h"
 #include "AsyncAction_ABFriendsSubsystem.generated.h"
 
@@ -13,10 +13,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFoundSearchUser, FABFriendSubsyst
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNotFoundSearchUser);
 
 /**
- * 
+ *
  */
 UCLASS()
-class ACCELBYTECOMMONGAME_API UAsyncAction_ABFriendsSubsystemQueryCachedList : public UBlueprintAsyncActionBase
+class ACCELBYTECOMMONGAME_API UAsyncAction_ABFriendsSubsystemGetFriendList : public UBlueprintAsyncActionBase
 {
 	GENERATED_BODY()
 
@@ -27,14 +27,18 @@ public:
 	 * @param LocalPlayer Local player object
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends", meta = (BlueprintInternalUseOnly = "true"))
-	static UAsyncAction_ABFriendsSubsystemQueryCachedList* QueryCachedFriendsList(ULocalPlayer* LocalPlayer);
+	static UAsyncAction_ABFriendsSubsystemGetFriendList* GetFriendList(ULocalPlayer* LocalPlayer);
 
 	UPROPERTY(BlueprintAssignable)
 	FOnCompleteQueryFriendsList OnComplete;
 
 protected:
 	virtual void Activate() override;
-	TWeakObjectPtr<UAccelByteSocialToolkit> SocialToolkit;
+
+	void TriggerAction() const;
+
+	TWeakObjectPtr<USocialToolkit> SocialToolkit;
+	int32 LocalPlayerIndex;
 };
 
 /**

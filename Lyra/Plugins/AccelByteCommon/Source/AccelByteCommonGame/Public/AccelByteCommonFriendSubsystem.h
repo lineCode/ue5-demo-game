@@ -116,8 +116,7 @@ public:
 
 #pragma endregion
 
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnCompleteGetFriendsList, FABFriendSubsystemOnlineFriends, FriendsList);
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnCompleteQueryUserMapping, FABFriendSubsystemOnlineUser, FoundUser);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FFriendPresenceChange, bool, bIsPlayingThisGame, FString, LoggedInPlatform);
 DECLARE_DYNAMIC_DELEGATE(FFriendVoidDelegate);
 
 /**
@@ -191,13 +190,19 @@ public:
 	 *
 	 * @param LocalPlayer Local player object
 	 * @param OnListChange Delegate that will be executed upon friends, incoming request, and outgoing request list change
+	 */
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
+	void OnFriendsListChange(ULocalPlayer* LocalPlayer, FFriendVoidDelegate OnListChange);
+
+	/**
+	 * Set OnFriendListChange delegate. Will be called everytime Friends list changes.
+	 *
+	 * @param LocalPlayer Local player object
+	 * @param TargetUniqueId Target user Unique Id
 	 * @param OnPresenceChange Delegate that will be executed upon friend's presence change
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void OnFriendsListChange(
-		ULocalPlayer* LocalPlayer, FFriendVoidDelegate OnListChange, FFriendVoidDelegate OnPresenceChange);
-
-	static TArray<FABFriendSubsystemOnlineFriend> BlueprintableFriendsDataConversion(TArray<TSharedRef<FOnlineFriend>>& FriendsList);
+	void OnUserPresenceChange(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId, FFriendPresenceChange OnPresenceChange);
 
 	static TArray<FABFriendSubsystemOnlineFriend> BlueprintableSocialUserListConversion(TArray<USocialUser*> SocialUsers);
 
