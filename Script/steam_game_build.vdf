@@ -3,6 +3,8 @@
 	"AppID" "1889240" // your AppID
 	"Desc" "Game Version is <<VERSION_PLACEHOLDER>>" // internal description for this build
 
+	"SetLive" "develop" // set this build live on a beta branch
+
 	// We are going to set current directory to <PROJECT_ROOT>\Artifact\WindowGameClient
 	"ContentRoot" "." // root content folder, relative to location of this file
 	"BuildOutput" "." // build output folder for build logs and build cache files
