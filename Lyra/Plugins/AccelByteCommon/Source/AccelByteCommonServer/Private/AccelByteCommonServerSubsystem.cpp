@@ -31,19 +31,25 @@ bool UAccelByteCommonServerSubsystem::ShouldCreateSubsystem(UObject* Outer) cons
 	return ChildClasses.Num() == 0;
 }
 
-void UAccelByteCommonServerSubsystem::StartServerInitialization()
+bool UAccelByteCommonServerSubsystem::StartServerInitialization()
 {
 #if UE_SERVER
 	if(ServerState < EServerState::ServerLogin)
 	{
 		ServerState = EServerState::ServerLogin;
 		ServerLogin();
+		return true;
 	}
-	else
+	else if(ServerState < EServerState::RegisterToDSM)
 	{
+		ServerState = EServerState::RegisterToDSM;
 		RegisterServerToDSM();
+		return true;
 	}
+
+	UE_LOG(LogAccelByteCommonServer, Warning, TEXT("Session registration already in process."));
 #endif
+	return false;
 }
 
 void UAccelByteCommonServerSubsystem::TryConstructSession()
@@ -56,12 +62,12 @@ void UAccelByteCommonServerSubsystem::TryConstructSession()
 	else
 	{
 		EServerSessionType SessionType = GetServerSessionType();
-		if(SessionType == UNKNOWN)
+		if(SessionType == EServerSessionType::UNKNOWN)
 		{
 			UE_LOG(LogAccelByteCommonServer, Warning, TEXT("Session is UNKNOWN."));
 			return;
 		}
-		else if(SessionType == CustomMatch)
+		else if(SessionType == EServerSessionType::CustomMatch)
 		{
 			UE_LOG(LogAccelByteCommonServer, Log, TEXT("Found dashes on the session ID, means this is custom match"));
 			GetServerApi()->ServerSessionBrowser.GetGameSessionBySessionId(SessionData.Session_id,
@@ -117,7 +123,7 @@ void UAccelByteCommonServerSubsystem::AddUserToSession(const FUniqueNetIdRepl& U
 	
 	UE_LOG(LogAccelByteCommonServer, Log, TEXT("Registering player to session : %s"), *AccelByteUniqueIdComposite.Id);
 	const EServerSessionType SessionType = GetServerSessionType();
-	if(SessionType == CustomMatch)
+	if(SessionType == EServerSessionType::CustomMatch)
 	{
 		GetServerApi()->ServerSessionBrowser.RegisterPlayer(
 			SessionData.Session_id,
@@ -127,7 +133,7 @@ void UAccelByteCommonServerSubsystem::AddUserToSession(const FUniqueNetIdRepl& U
 			FErrorHandler::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnAccelByteCommonServerError)
 		);
 	}
-	else if(SessionType == Matchmaking)
+	else if(SessionType == EServerSessionType::Matchmaking)
 	{
 		// No need to register player. It automatically registered by matchmaking service
 		UE_LOG(LogAccelByteCommonServer, Log, TEXT("Registering player to session canceled. Automatically registered by Matchmaking service"), *UniqueNetId.ToString());
@@ -145,7 +151,7 @@ void UAccelByteCommonServerSubsystem::RemoveUserFromSession(const FUniqueNetIdRe
 	UE_LOG(LogAccelByteCommonServer, Log, TEXT("Unregistering player to session : %s"), *AccelByteUniqueIdComposite.Id);
 	
 	const EServerSessionType SessionType = GetServerSessionType();
-	if(SessionType == CustomMatch)
+	if(SessionType == EServerSessionType::CustomMatch)
 	{
 		GetServerApi()->ServerSessionBrowser.UnregisterPlayer(
 			SessionData.Session_id,
@@ -154,7 +160,7 @@ void UAccelByteCommonServerSubsystem::RemoveUserFromSession(const FUniqueNetIdRe
 			FErrorHandler::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnAccelByteCommonServerError)
 		);
 	}
-	else if(SessionType == Matchmaking)
+	else if(SessionType == EServerSessionType::Matchmaking)
 	{
 		TArray<FString> Channel;
 		SessionData.Match.Channel.ParseIntoArray(Channel, TEXT(":"), true);
@@ -343,6 +349,8 @@ void UAccelByteCommonServerSubsystem::OnGetSessionBySessionIdSuccess(const FAcce
 	if(ServerState == EServerState::GetSessionStatus)
 	{
 		SessionData = Response;
+		SimpleSessionInfo = {};
+
 		// this is matchmaking session
 		if(!Response.Match.Match_id.IsEmpty())
 		{
@@ -350,10 +358,20 @@ void UAccelByteCommonServerSubsystem::OnGetSessionBySessionIdSuccess(const FAcce
 			return;
 		}
 		
+		SimpleSessionInfo.SessionMode = EServerSessionType::CustomMatch;
+		SimpleSessionInfo.SessionId = Response.Session_id;
+		SimpleSessionInfo.SessionType = Response.Session_type;
+		SimpleSessionInfo.AllPlayers = Response.All_players;
+		SimpleSessionInfo.Players = Response.Players;
+		SimpleSessionInfo.Spectators = Response.Spectators;
+		SimpleSessionInfo.SessionSetting.AllowJoinInProgress = Response.Joinable;
+		SimpleSessionInfo.SessionSetting.MapName = Response.Game_session_setting.Map_name;
+		SimpleSessionInfo.SessionSetting.Password = Response.Game_session_setting.Password;
+		
 		UE_LOG(LogAccelByteCommonServer, Warning, TEXT("This is Custom Match, no need to enqueue Joinable!"))
 		ServerState = EServerState::Completed;
 
-		OnSessionInfoReceivedDelegate.Broadcast(Response);
+		OnSessionInfoReceivedDelegate.Broadcast(SimpleSessionInfo);
 		return;
 	}
 	UE_LOG(LogAccelByteCommonServer, Warning, TEXT("ServerState already Enqueue. Skipping!"))
@@ -368,10 +386,18 @@ void UAccelByteCommonServerSubsystem::OnQuerySessionStatusSuccess(const FAccelBy
 	if(!Response.Match_id.IsEmpty())
 	{
 		ServerState = EServerState::EnqueueJoinable;
+		
+		SimpleSessionInfo = {};
+		SimpleSessionInfo.SessionMode = EServerSessionType::Matchmaking;
+		SimpleSessionInfo.SessionId = Response.Match_id;
+		SimpleSessionInfo.SessionType = TEXT("dedicated");
+		SimpleSessionInfo.SessionSetting.AllowJoinInProgress = Response.Joinable;
+		SimpleSessionInfo.SessionSetting.MapName = Response.Party_attributes.JsonObject->GetStringField(SETTING_MAPNAME.ToString());
+			
 		EnqueueJoinable();
 	}
 
-	OnSessionInfoReceivedDelegate.Broadcast(SessionData);
+	OnSessionInfoReceivedDelegate.Broadcast(SimpleSessionInfo);
 }
 
 void UAccelByteCommonServerSubsystem::OnQuerySessionStatusFailed(int32 ErrCode, FString const& ErrStr)

@@ -20,6 +20,7 @@
 #include "Player/LyraPlayerSpawningManagerComponent.h"
 #include "TimerManager.h"
 #include "AccelByteCommonServerSubsystem.h"
+#include "Online/OnlineSessionNames.h"
 
 ALyraGameMode::ALyraGameMode(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -71,6 +72,22 @@ const ULyraPawnData* ALyraGameMode::GetPawnDataForController(const AController* 
 void ALyraGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
+
+#if UE_SERVER
+	// #START @AccelByte Implementation  : Register to DSM
+	UE_LOG(LogLyra, Log, TEXT("LyraGameSession: Registering Server To DSM"))
+	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
+	if(ServerSubsystem != nullptr)
+	{
+		ServerSubsystem->OnSessionInfoReceivedDelegate.AddUniqueDynamic(this, &ThisClass::HandleSessionInfoReceived);
+		if(!ServerSubsystem->StartServerInitialization())
+		{
+			GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::HandleMatchAssignmentIfNotExpectingOne);
+		}
+	}
+	else
+	// #END
+#endif
 
 	//@TODO: Eventually only do this for PIE/auto
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::HandleMatchAssignmentIfNotExpectingOne);
@@ -146,17 +163,6 @@ void ALyraGameMode::HandleMatchAssignmentIfNotExpectingOne()
 
 void ALyraGameMode::OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const FString& ExperienceIdSource)
 {
-#if UE_SERVER
-	UE_LOG(LogTemp, Log, TEXT("LyraGameSession: Registering Server To DSM"))
-	// #START @AccelByte Implementation  : Register to DSM
-	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
-	if(ServerSubsystem != nullptr)
-	{
-		ServerSubsystem->StartServerInitialization();
-	}
-	// #END
-#endif
-	
 #if WITH_SERVER_CODE
 	if (ExperienceId.IsValid())
 	{
@@ -198,6 +204,11 @@ bool ALyraGameMode::IsExperienceLoaded() const
 	check(ExperienceComponent);
 
 	return ExperienceComponent->IsExperienceLoaded();
+}
+
+void ALyraGameMode::HandleSessionInfoReceived(const FDedicatedServerInfo& Response)
+{
+	GetWorld()->ServerTravel(Response.SessionSetting.MapName);
 }
 
 UClass* ALyraGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)

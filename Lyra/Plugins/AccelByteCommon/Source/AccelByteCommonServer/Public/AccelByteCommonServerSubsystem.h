@@ -10,28 +10,75 @@
 #include "AccelByteCommonServerSubsystem.generated.h"
 
 UENUM()
-enum EServerState
+enum class EServerState : uint8
 {
-	Failed				= -1,
-	NotStarted			= 0,
-	ServerLogin			= 1,
-	RegisterToDSM		= 2,
-	GetSessionId		= 3,		//check if claimed or not
-	NotClaimed			= 4,		//ds still idle (ready)
-	GetSessionStatus	= 5,		// ds is claimed
-	EnqueueJoinable		= 6,
-	Completed			= 7
+	Failed = 0,
+	NotStarted,
+	ServerLogin,
+	RegisterToDSM,
+	GetSessionId,		//check if claimed or not
+	NotClaimed,		    //ds still idle (ready)
+	GetSessionStatus,	// ds is claimed
+	EnqueueJoinable,
+	Completed
 };
 
-UENUM()
-enum EServerSessionType
+UENUM(BlueprintType)
+enum class EServerSessionType : uint8
 {
 	UNKNOWN	= 0,
 	Matchmaking,
 	CustomMatch
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAccelByteSessionInfoReceivedDelegate, const FAccelByteModelsSessionBrowserData&, Response);
+USTRUCT(BlueprintType)
+struct ACCELBYTECOMMONSERVER_API FSessionSetting
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	FString Mode{};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	FString MapName{};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	bool AllowJoinInProgress{};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	FString Password{};
+};
+
+USTRUCT(BlueprintType)
+struct ACCELBYTECOMMONSERVER_API FDedicatedServerInfo
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	EServerSessionType SessionMode{EServerSessionType::UNKNOWN}; // matchmaking or sessionbrowser
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	FString SessionId{};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	FString SessionType{};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	FSessionSetting SessionSetting{};
+
+	/** @brief all players including player that leave the session. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	TArray<FString> AllPlayers{};
+
+	/** @brief Current active players */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	TArray<FString> Players{};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	TArray<FString> Spectators{};
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAccelByteSessionInfoReceivedDelegate, const FDedicatedServerInfo&, Response);
 
 /** Generic Delegates when succeed or fail */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FAccelByteCommonServerGenericDelegate, bool, bSuccess, int32, ErrCode, FText, Error);
@@ -50,7 +97,7 @@ public:
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 
 	UFUNCTION(BlueprintCallable, Category= "AB Common Server Subsystem")
-	virtual void StartServerInitialization();
+	virtual bool StartServerInitialization();
 	
 	/**
 	 * @brief Trying to construct session.
@@ -124,6 +171,7 @@ protected:
 	UFUNCTION()
 	void OnAccelByteCommonServerError(int32 ErrCode, FString const& ErrStr);
 private:
+	FDedicatedServerInfo SimpleSessionInfo;
 	FAccelByteModelsSessionBrowserData SessionData;
 	EServerState ServerState { EServerState::NotStarted };
 };
