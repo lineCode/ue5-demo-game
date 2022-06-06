@@ -8,6 +8,7 @@
 #include "OnlineSessionInterfaceAccelByte.h"
 #include "OnlineSubsystemUtils.h"
 #include "Core/AccelByteMultiRegistry.h"
+#include "BlackBoxSDKModule.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogAccelByteCommonServer, Log, All);
 DEFINE_LOG_CATEGORY(LogAccelByteCommonServer);
@@ -332,6 +333,9 @@ void UAccelByteCommonServerSubsystem::OnGetSessionIdSuccess(const FAccelByteMode
 		ServerState = EServerState::GetSessionStatus;
 		TryConstructSession();
 	}
+
+	// Set Armada information to crash via BlackBox
+	IAccelByteBlackBoxSDKModuleInterface::Get().UpdateAdditionalInfo(TEXT("ARMADA_SESSION_ID"), Response.Session_id);
 }
 
 void UAccelByteCommonServerSubsystem::OnGetSessionIdFailed(int32 ErrCode, FString const& ErrStr)
@@ -381,6 +385,12 @@ void UAccelByteCommonServerSubsystem::OnQuerySessionStatusSuccess(const FAccelBy
 {
 	UE_LOG(LogAccelByteCommonServer, Log, TEXT("Server QuerySessionStatus Success!"));
 	
+	IAccelByteBlackBoxSDKModuleInterface::Get().UpdateAdditionalInfo(TEXT("ARMADA_MATCH_ID"), Response.Match_id);
+	IAccelByteBlackBoxSDKModuleInterface::Get().UpdateAdditionalInfo(TEXT("ARMADA_CHANNEL"), Response.Channel);
+	IAccelByteBlackBoxSDKModuleInterface::Get().UpdateAdditionalInfo(TEXT("ARMADA_GAMEMODE"), Response.Game_mode);
+	IAccelByteBlackBoxSDKModuleInterface::Get().UpdateAdditionalInfo(TEXT("ARMADA_REGION"), Response.Region);
+	IAccelByteBlackBoxSDKModuleInterface::Get().UpdateAdditionalInfo(TEXT("ARMADA_SERVER_NAME"), Response.Server_name);
+
 	SessionData.Match = Response;
 	// this is matchmaking session
 	if(!Response.Match_id.IsEmpty())
