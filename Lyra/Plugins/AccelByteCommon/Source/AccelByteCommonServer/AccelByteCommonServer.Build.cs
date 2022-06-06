@@ -29,7 +29,8 @@ public class AccelByteCommonServer : ModuleRules
 				"Json",
 				"JsonUtilities",
 				"AccelByteUe4Sdk",
-				"OnlineSubsystemAccelByte"
+				"OnlineSubsystemAccelByte",
+				"BlackBoxSDK"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
