@@ -93,7 +93,7 @@ void UAsyncAction_ABFriendsSubsystemSearchUser::Activate()
 					const FUniqueNetId& FoundUserId,
 					const FString& ErrorMessage)
 				{
-					if (bWasSuccessful)
+					if (bWasSuccessful && FoundUserId.IsValid())
 					{
 						if (*LocalPlayerUserId.Get() == FoundUserId && bHideSelf)
 						{
