@@ -5,9 +5,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "OnlineSubsystem.h"
 #include "OnlineSubsystemTypes.h"
 #include "UObject/NoExportTypes.h"
+#include "User/SocialUser.h"
 #include "AccelByteCommonFriendSubsystem.generated.h"
 
 #pragma region Blueprintable structs
@@ -39,7 +39,7 @@ public:
 	FUniqueNetIdRepl UserId;
 
 	UPROPERTY(BlueprintReadOnly)
-	FText DisplayName;
+	FString DisplayName;
 
 	FABFriendSubsystemOnlineUser()
 	{
@@ -47,7 +47,7 @@ public:
 
 	FABFriendSubsystemOnlineUser(
 		const FUniqueNetIdRepl UserId,
-		const FText& DisplayName) :
+		const FString& DisplayName) :
 	UserId(UserId),
 	DisplayName(DisplayName)
 	{
@@ -64,7 +64,7 @@ public:
 	FABFriendSubsystemOnlineUser UserInfo;
 
 	UPROPERTY(BlueprintReadOnly)
-	FText LoggedInPlatform;
+	FString LoggedInPlatform;
 
 	UPROPERTY(BlueprintReadOnly)
 	EABFriendSubsystemInviteStatus InviteStatus = EABFriendSubsystemInviteStatus::Unknown;
@@ -72,14 +72,17 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsPlayingThisGame = false;
 
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsInParty = false;
+
 	FABFriendSubsystemOnlineFriend()
 	{
 	}
 
 	FABFriendSubsystemOnlineFriend(
 		const FUniqueNetIdRepl UserId,
-		const FText& DisplayName,
-		const FText& LoggedInPlatform,
+		const FString& DisplayName,
+		const FString& LoggedInPlatform,
 		const EABFriendSubsystemInviteStatus InviteStatus,
 		const bool& bIsPlayingThisGame) :
 	UserInfo(UserId, DisplayName),
@@ -91,7 +94,7 @@ public:
 
 	FABFriendSubsystemOnlineFriend(
 		const FUniqueNetIdRepl UserId,
-		const FText& DisplayName) :
+		const FString& DisplayName) :
 	UserInfo(UserId, DisplayName)
 	{
 	}
@@ -113,8 +116,7 @@ public:
 
 #pragma endregion
 
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnCompleteGetFriendsList, FABFriendSubsystemOnlineFriends, FriendsList);
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnCompleteQueryUserMapping, FABFriendSubsystemOnlineUser, FoundUser);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FFriendPresenceChange, bool, bIsPlayingThisGame, FString, LoggedInPlatform);
 DECLARE_DYNAMIC_DELEGATE(FFriendVoidDelegate);
 
 /**
@@ -129,81 +131,82 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 
 	/**
-	 * Attempt to retrieve cached Friends list (accepted and pending request). If does not exist, retrieve from endpoint.
+	 * Get Display Name and Logged In platform of local user from SocialToolkit
 	 *
-	 * @param LocalTargetUserNum Local player number
-	 * @param OnComplete Delegate that will be called upon completion
+	 * @param DisplayName Display name output
+	 * @param Platform Logged in platform output
+	 * @param LocalPlayer Local player object
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void GetFriendsList(int32 LocalTargetUserNum, FOnCompleteGetFriendsList OnComplete);
-
-	/**
-	 * Search AccelByte user by the exact username.
-	 *
-	 * @param LocalTargetUserNum Local player number
-	 * @param DisplayName Username to be search
-	 * @param OnComplete Delegate that will be called upon completion
-	 * @param OnNotFound Delegate that will be called upon user not found
-	 * @param bHideSelf Whether to show this user's in search result or not
-	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void SearchUserByExactDisplayName(
-		int32 LocalTargetUserNum,
-		FString DisplayName,
-		FOnCompleteQueryUserMapping OnComplete,
-		FFriendVoidDelegate OnNotFound,
-		bool bHideSelf = true);
+	void GetLocalUserDisplayNameAndPlatform(FString& DisplayName, FString& Platform, ULocalPlayer* LocalPlayer);
 
 	/**
 	 * Send friend request to another user.
 	 *
-	 * @param LocalTargetUserNum Local player number
-	 * @param TargetUniqueId Target user Unique Id
+	 * @param LocalPlayer Target local player object
+	 * @param DisplayName Exact DisplayName of the user to be requested
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void SendFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl TargetUniqueId);
+	void SendFriendRequest(ULocalPlayer* LocalPlayer, FString DisplayName);
 
 	/**
 	 * Accept pending received friend request.
 	 *
-	 * @param LocalTargetUserNum Local player number
+	 * @param LocalPlayer Local player object
 	 * @param SenderUniqueId Friend request sender Unique Id
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void AcceptFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl SenderUniqueId);
+	void AcceptFriendRequest(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl SenderUniqueId);
 
 	/**
 	 * Reject pending received friend request.
 	 *
-	 * @param LocalTargetUserNum Local player number
+	 * @param LocalPlayer Local player object
 	 * @param SenderUniqueId Friend request sender Unique Id
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void RejectFriendRequest(int32 LocalTargetUserNum, FUniqueNetIdRepl SenderUniqueId);
+	void RejectFriendRequest(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl SenderUniqueId);
 
 	/**
-	 * Unfriend or cancel sent friend request to a user.
+	 * Unfriend a user.
 	 *
-	 * @param LocalTargetUserNum Local player number
+	 * @param LocalPlayer Local player object
 	 * @param TargetUniqueId Target user Unique Id
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void RemoveFriend(int32 LocalTargetUserNum, FUniqueNetIdRepl TargetUniqueId);
+	void Unfriend(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId);
+
+	/**
+	 * Cancel sent friend request
+	 *
+	 * @param LocalPlayer Local player object
+	 * @param TargetUniqueId Target user Unique Id
+	 */
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
+	void CancelSentFriendRequest(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId);
 
 	/**
 	 * Set OnFriendListChange delegate. Will be called everytime Friends list changes.
 	 *
-	 * @param LocalTargetUserNum Local player number
-	 * @param OnChange Delegate that will be executed
+	 * @param LocalPlayer Local player object
+	 * @param OnListChange Delegate that will be executed upon friends, incoming request, and outgoing request list change
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void OnFriendListChange(int32 LocalTargetUserNum, FFriendVoidDelegate OnChange);
+	void OnFriendsListChange(ULocalPlayer* LocalPlayer, FFriendVoidDelegate OnListChange);
+
+	/**
+	 * Set OnFriendListChange delegate. Will be called everytime Friends list changes.
+	 *
+	 * @param LocalPlayer Local player object
+	 * @param TargetUniqueId Target user Unique Id
+	 * @param OnPresenceChange Delegate that will be executed upon friend's presence change
+	 */
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
+	void OnUserPresenceChange(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId, FFriendPresenceChange OnPresenceChange);
+
+	static TArray<FABFriendSubsystemOnlineFriend> BlueprintableSocialUserListConversion(TArray<USocialUser*> SocialUsers);
 
 private:
 
-	static TArray<FABFriendSubsystemOnlineFriend> BlueprintableFriendsDataConversion(TArray<TSharedRef<FOnlineFriend>>& FriendsList);
-
 	static EABFriendSubsystemInviteStatus BlueprintableInviteStatusConversion(EInviteStatus::Type InviteStatus);
-
-	IOnlineSubsystem* OSS;
 };
