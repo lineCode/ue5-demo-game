@@ -76,6 +76,9 @@ struct ACCELBYTECOMMONSERVER_API FDedicatedServerInfo
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
 	TArray<FString> Spectators{};
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AccelByte | Server Subsystem")
+	int32 NumBots{0};
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAccelByteSessionInfoReceivedDelegate, const FDedicatedServerInfo&, Response);

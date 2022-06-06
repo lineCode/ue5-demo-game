@@ -208,7 +208,7 @@ bool ALyraGameMode::IsExperienceLoaded() const
 
 void ALyraGameMode::HandleSessionInfoReceived(const FDedicatedServerInfo& Response)
 {
-	GetWorld()->ServerTravel(Response.SessionSetting.MapName);
+	GetWorld()->ServerTravel(FString::Printf(TEXT("%s?NumBots=%d"), *Response.SessionSetting.MapName, Response.NumBots));
 }
 
 UClass* ALyraGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)

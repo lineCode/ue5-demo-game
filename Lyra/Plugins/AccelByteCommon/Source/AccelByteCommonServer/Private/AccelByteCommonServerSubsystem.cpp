@@ -368,6 +368,7 @@ void UAccelByteCommonServerSubsystem::OnGetSessionBySessionIdSuccess(const FAcce
 		SimpleSessionInfo.AllPlayers = Response.All_players;
 		SimpleSessionInfo.Players = Response.Players;
 		SimpleSessionInfo.Spectators = Response.Spectators;
+		SimpleSessionInfo.NumBots = Response.Game_session_setting.Num_bot;
 		SimpleSessionInfo.SessionSetting.AllowJoinInProgress = Response.Joinable;
 		SimpleSessionInfo.SessionSetting.MapName = Response.Game_session_setting.Map_name;
 		SimpleSessionInfo.SessionSetting.Password = Response.Game_session_setting.Password;
@@ -402,7 +403,14 @@ void UAccelByteCommonServerSubsystem::OnQuerySessionStatusSuccess(const FAccelBy
 		SimpleSessionInfo.SessionId = Response.Match_id;
 		SimpleSessionInfo.SessionType = TEXT("dedicated");
 		SimpleSessionInfo.SessionSetting.AllowJoinInProgress = Response.Joinable;
-		SimpleSessionInfo.SessionSetting.MapName = Response.Party_attributes.JsonObject->GetStringField(SETTING_MAPNAME.ToString());
+		if(Response.Party_attributes.JsonObject->HasField(SETTING_MAPNAME.ToString()))
+		{
+			SimpleSessionInfo.SessionSetting.MapName = Response.Party_attributes.JsonObject->GetStringField(SETTING_MAPNAME.ToString());
+		}
+		if(Response.Party_attributes.JsonObject->HasField(SETTING_NUMBOTS.ToString()))
+		{
+			SimpleSessionInfo.NumBots = FCString::Atoi(*Response.Party_attributes.JsonObject->GetStringField(SETTING_NUMBOTS.ToString()));
+		}
 			
 		EnqueueJoinable();
 	}
