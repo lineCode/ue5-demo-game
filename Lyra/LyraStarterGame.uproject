@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "{247E85F7-44DB-8120-9D64-67B748DC613D}",
+	"EngineAssociation": "5.0",
 	"Category": "Samples",
 	"Description": "",
 	"Modules": [
@@ -304,6 +304,10 @@
 		},
 		{
 			"Name": "AccelByteCommon",
+			"Enabled": true
+		},
+		{
+			"Name": "AccelByteEndgame",
 			"Enabled": true
 		}
 	],
