@@ -16,6 +16,17 @@ DEFINE_LOG_CATEGORY(LogAccelByteCommonServer);
 void UAccelByteCommonServerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
+	
+	FString GameVersion;
+	GConfig->GetString(
+		TEXT("/Script/EngineSettings.GeneralProjectSettings"),
+		TEXT("ProjectVersion"),
+		GameVersion,
+		GGameIni
+	);
+
+	// Log out the game version, debugging purpose.
+	UE_LOG(LogAccelByteCommonServer, Log, TEXT("GAME VERSION = %s"), *GameVersion);
 }
 
 void UAccelByteCommonServerSubsystem::Deinitialize()
