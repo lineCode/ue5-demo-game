@@ -46,10 +46,6 @@
 		{
 			"Name": "CommonUser",
 			"Enabled": true
-		},
-		{
-			"Name": "BlackBoxSDK",
-			"Enabled": true
 		}
 	]
 }
