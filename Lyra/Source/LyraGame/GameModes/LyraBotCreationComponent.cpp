@@ -71,6 +71,12 @@ void ULyraBotCreationComponent::ServerCreateBots()
 		EffectiveBotCount = UGameplayStatics::GetIntOption(GameModeBase->OptionsString, TEXT("NumBots"), EffectiveBotCount);
 	}
 
+	// @AccelByte Implementation : Override number bots by command line args
+	if(FParse::Param(FCommandLine::Get(), TEXT("nobot")))
+	{
+		EffectiveBotCount = 0;
+	}
+
 	// Create them
 	for (int32 Count = 0; Count < EffectiveBotCount; ++Count)
 	{

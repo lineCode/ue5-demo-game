@@ -12,12 +12,6 @@
 void UAccelByteCommonGameSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-
-	UCommonUserSubsystem* UserSubsystem = GetGameInstance()->GetSubsystem<UCommonUserSubsystem>();
-	if(UserSubsystem)
-	{
-		UserSubsystem->OnUserInitializeComplete.AddUniqueDynamic(this, &UAccelByteCommonGameSubsystem::HandleUserInitialized);
-	}
 }
 
 void UAccelByteCommonGameSubsystem::Deinitialize()
@@ -32,18 +26,4 @@ bool UAccelByteCommonGameSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 
 	// Only create an instance if there is not a game-specific subclass
 	return ChildClasses.Num() == 0;
-}
-
-void UAccelByteCommonGameSubsystem::HandleUserInitialized(const UCommonUserInfo* UserInfo, bool bSuccess, FText Error,
-                                                  ECommonUserPrivilege RequestedPrivilege, ECommonUserOnlineContext OnlineContext)
-{
-	ULocalPlayer* LocalPlayer = GetGameInstance()->GetLocalPlayerByIndex(UserInfo->LocalPlayerIndex);
-	if(LocalPlayer)
-	{
-		USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer<USocialToolkit>(LocalPlayer);
-		if(SocialToolkit)
-		{
-			SocialToolkit->GetSocialManager().CreatePersistentParty();
-		}
-	}
 }

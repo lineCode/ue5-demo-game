@@ -24,7 +24,4 @@ public:
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 
 protected:
-	UFUNCTION()
-	virtual void HandleUserInitialized(const UCommonUserInfo* UserInfo, bool bSuccess, FText Error, ECommonUserPrivilege RequestedPrivilege, ECommonUserOnlineContext OnlineContext);
-	
 };

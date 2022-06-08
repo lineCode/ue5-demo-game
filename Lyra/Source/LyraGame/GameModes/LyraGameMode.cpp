@@ -79,13 +79,11 @@ void ALyraGameMode::InitGame(const FString& MapName, const FString& Options, FSt
 	UAccelByteCommonServerSubsystem* ServerSubsystem = GetGameInstance()->GetSubsystem<UAccelByteCommonServerSubsystem>();
 	if(ServerSubsystem != nullptr)
 	{
-		ServerSubsystem->OnSessionInfoReceivedDelegate.AddUniqueDynamic(this, &ThisClass::HandleSessionInfoReceived);
 		if(!ServerSubsystem->StartServerInitialization())
 		{
 			GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::HandleMatchAssignmentIfNotExpectingOne);
 		}
 	}
-	else
 	// #END
 #endif
 
@@ -204,11 +202,6 @@ bool ALyraGameMode::IsExperienceLoaded() const
 	check(ExperienceComponent);
 
 	return ExperienceComponent->IsExperienceLoaded();
-}
-
-void ALyraGameMode::HandleSessionInfoReceived(const FDedicatedServerInfo& Response)
-{
-	GetWorld()->ServerTravel(FString::Printf(TEXT("%s?NumBots=%d"), *Response.SessionSetting.MapName, Response.NumBots));
 }
 
 UClass* ALyraGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)

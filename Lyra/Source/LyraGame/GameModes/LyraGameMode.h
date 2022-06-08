@@ -78,7 +78,6 @@ protected:
 	bool IsExperienceLoaded() const;
 
 	UFUNCTION()
-	void HandleSessionInfoReceived(const FDedicatedServerInfo& Response);
 	void OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const FString& ExperienceIdSource);
 
 	void HandleMatchAssignmentIfNotExpectingOne();
