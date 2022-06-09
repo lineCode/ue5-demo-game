@@ -4,6 +4,7 @@
 #include "AccelByteCommonPartySubsystem.h"
 
 #include "Online.h"
+#include "OnlinePartyInterfaceAccelByte.h"
 #include "SocialManager.h"
 #include "Party/PartyMember.h"
 #include "Party/SocialParty.h"
@@ -25,7 +26,7 @@ TArray<FABPartySubsystemPartyMember> UAccelByteCommonPartySubsystem::GetPartyMem
 
 		const FOnlinePartyConstPtr OnlineParty = PartyInf->GetParty(
 			LocalUserId,
-			FOnlinePartyTypeId(0));
+			FOnlinePartySystemAccelByte::FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
 
 		TArray<FOnlinePartyMemberConstRef> PartyMembers;
 		PartyInf->GetPartyMembers(
@@ -45,7 +46,7 @@ FABPartySubsystemPartyMember UAccelByteCommonPartySubsystem::GetPartyLeader(ULoc
 	FABPartySubsystemPartyMember PartyLeader;
 	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
-		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartyTypeId(0));
+		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
 		check(Party);
 
 		PartyLeader = BlueprintablePartyMemberData(
@@ -59,7 +60,7 @@ void UAccelByteCommonPartySubsystem::InviteToParty(ULocalPlayer* LocalPlayer, FU
 {
 	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
-		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartyTypeId(0));
+		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
 		check(Party);
 
 		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
@@ -77,7 +78,7 @@ void UAccelByteCommonPartySubsystem::KickFromParty(ULocalPlayer* LocalPlayer, FU
 {
 	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
-		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartyTypeId(0));
+		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
 		check(Party);
 
 		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
@@ -97,7 +98,7 @@ void UAccelByteCommonPartySubsystem::PromoteAsLeader(ULocalPlayer* LocalPlayer, 
 {
 	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
-		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartyTypeId(0));
+		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
 		check(Party);
 
 		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
@@ -115,7 +116,7 @@ void UAccelByteCommonPartySubsystem::LeaveParty(ULocalPlayer* LocalPlayer)
 {
 	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
-		USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartyTypeId(0));
+		USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
 
 		Party->LeaveParty();
 	}
@@ -135,7 +136,7 @@ void UAccelByteCommonPartySubsystem::SetOnPartyInviteRequestReceivedDelegate(ULo
 		CreatePartyIfNoPartyExist(SocialToolkit, TDelegate<void()>::CreateWeakLambda(this, [SocialToolkit, PartyInf, OnInvitationReceived, this]()
 		{
 			const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(
-				FOnlinePartyTypeId(0));
+				FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
 			check(Party);
 
 			PartyInf->OnPartyInviteReceivedDelegates.AddWeakLambda(this,
@@ -158,7 +159,7 @@ void UAccelByteCommonPartySubsystem::AcceptPartyInvite(ULocalPlayer* LocalPlayer
 {
 	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
-		USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartyTypeId(0));
+		USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
 
 		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
 		check(OSS);
@@ -204,7 +205,7 @@ void UAccelByteCommonPartySubsystem::SetOnPartyDataChangeDelegate(ULocalPlayer* 
 {
 	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
-		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartyTypeId(0));
+		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
 		check(Party);
 
 		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
@@ -249,7 +250,7 @@ void UAccelByteCommonPartySubsystem::SetOnPartyDataChangeDelegate(ULocalPlayer* 
 
 void UAccelByteCommonPartySubsystem::CreatePartyIfNoPartyExist(const USocialToolkit* SocialToolkit, TDelegate<void()> OnComplete)
 {
-	if (SocialToolkit->GetSocialManager().GetParty(FOnlinePartyTypeId(0)))
+	if (SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId()))
 	{
 		OnComplete.ExecuteIfBound();
 	}
@@ -259,6 +260,7 @@ void UAccelByteCommonPartySubsystem::CreatePartyIfNoPartyExist(const USocialTool
 		PartyConfiguration.bIsAcceptingMembers = true;
 		SocialToolkit->GetSocialManager().CreateParty(
 			FOnlinePartyTypeId(0),
+			FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId(),
 			PartyConfiguration,
 			USocialManager::FOnCreatePartyAttemptComplete::CreateWeakLambda(this,
 				[OnComplete](ECreatePartyCompletionResult Result)
