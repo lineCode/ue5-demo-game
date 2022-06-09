@@ -12,6 +12,6 @@ $ArtifactPath = "LyraStarterGame/Saved/Logs"
 $GameServerPathAbsolute = Resolve-Path -Path $GameServerPath
 
 # Execute the command
-Invoke-Expression "${ArmadaDSUploaderPath} syncFolder --namespace ABDemoGame --hostname https://demo.accelbyte.io --command ${EntryPoint} --path ${GameServerPathAbsolute} --version ${Version} --s3dirname ABDemoGame --id ${DSUploader_ClientID} --bucket justice-ds-upload-service-demo --debug-enabled --show-progress --artifact ${ArtifactPath}"
+Invoke-Expression "${ArmadaDSUploaderPath} syncFolder --namespace ABDemoGame --hostname https://demo.accelbyte.io --command ${EntryPoint} --path ${GameServerPathAbsolute} --version ${Version} --s3dirname ABDemoGame --id ${DSUploader_ClientID} --bucket accelbyte-justice-demo-justice-ds-upload --debug-enabled --show-progress --artifact ${ArtifactPath}"
 
 Write-Output "---Step 14: Upload  Game Server (Linux) Binaries to Armada---DONE"
