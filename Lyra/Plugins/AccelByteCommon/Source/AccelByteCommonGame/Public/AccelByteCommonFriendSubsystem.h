@@ -100,20 +100,6 @@ public:
 	}
 };
 
-/**
- * Blueprint cannot use delegate with TArray param
- * This struct is a workaround for that
- */
-USTRUCT(BlueprintType)
-struct FABFriendSubsystemOnlineFriends
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(BlueprintReadWrite)
-	TArray<FABFriendSubsystemOnlineFriend> Data;
-};
-
 #pragma endregion
 
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FFriendPresenceChange, bool, bIsPlayingThisGame, FString, LoggedInPlatform);
@@ -129,6 +115,19 @@ class UAccelByteCommonFriendSubsystem : public UGameInstanceSubsystem
 
 public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+
+	/**
+	 * Get Cached Friends, pending incoming and outgoing friend request list
+	 *
+	 * @param LocalPlayer Local player object
+	 * @param ABOnlineFriends Friends list output
+	 * @param bIsDoneQuery Whether the async task to get the data from endpoint have finished or not
+	 */
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends", meta = (ExpandBoolAsExecs = "bIsDoneQuery"))
+	void GetFriendsList(
+		ULocalPlayer* LocalPlayer,
+		TArray<FABFriendSubsystemOnlineFriend>& ABOnlineFriends,
+		bool& bIsDoneQuery);
 
 	/**
 	 * Get Display Name and Logged In platform of local user from SocialToolkit

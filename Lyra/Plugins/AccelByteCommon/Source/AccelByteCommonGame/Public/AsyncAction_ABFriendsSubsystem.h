@@ -8,38 +8,8 @@
 #include "Kismet/BlueprintAsyncActionBase.h"
 #include "AsyncAction_ABFriendsSubsystem.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCompleteQueryFriendsList, FABFriendSubsystemOnlineFriends, FriendsList);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFoundSearchUser, FABFriendSubsystemOnlineUser, TargetUser);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNotFoundSearchUser);
-
-/**
- *
- */
-UCLASS()
-class ACCELBYTECOMMONGAME_API UAsyncAction_ABFriendsSubsystemGetFriendList : public UBlueprintAsyncActionBase
-{
-	GENERATED_BODY()
-
-public:
-	/**
-	 * Retrieved cached friends, incoming, and outgoing friends request list. If there's no cached data, retrieve from API
-	 *
-	 * @param LocalPlayer Local player object
-	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends", meta = (BlueprintInternalUseOnly = "true"))
-	static UAsyncAction_ABFriendsSubsystemGetFriendList* GetFriendList(ULocalPlayer* LocalPlayer);
-
-	UPROPERTY(BlueprintAssignable)
-	FOnCompleteQueryFriendsList OnComplete;
-
-protected:
-	virtual void Activate() override;
-
-	void TriggerAction() const;
-
-	TWeakObjectPtr<USocialToolkit> SocialToolkit;
-	int32 LocalPlayerIndex;
-};
 
 /**
  *
