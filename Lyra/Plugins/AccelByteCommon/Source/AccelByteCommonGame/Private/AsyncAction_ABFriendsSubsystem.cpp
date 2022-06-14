@@ -7,65 +7,6 @@
 #include "OnlineSubsystemUtils.h"
 #include "SocialToolkit.h"
 
-UAsyncAction_ABFriendsSubsystemGetFriendList* UAsyncAction_ABFriendsSubsystemGetFriendList::GetFriendList(
-	ULocalPlayer* LocalPlayer)
-{
-	UAsyncAction_ABFriendsSubsystemGetFriendList* Action =
-		NewObject<UAsyncAction_ABFriendsSubsystemGetFriendList>();
-
-	if (LocalPlayer)
-	{
-		Action->SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer);
-		Action->LocalPlayerIndex = LocalPlayer->GetLocalPlayerIndex();
-	}
-	else
-	{
-		Action->SetReadyToDestroy();
-	}
-
-	return Action;
-}
-
-void UAsyncAction_ABFriendsSubsystemGetFriendList::Activate()
-{
-	Super::Activate();
-
-	if (SocialToolkit.IsValid())
-	{
-		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
-		check(OSS);
-
-		const IOnlineFriendsPtr FriendsPtr = OSS->GetFriendsInterface();
-		check(FriendsPtr);
-
-		TArray<TSharedRef<FOnlineFriend>> OutFriend;
-		if (!FriendsPtr->GetFriendsList(LocalPlayerIndex, "", OutFriend))
-		{
-			FriendsPtr->ReadFriendsList(LocalPlayerIndex, "", FOnReadFriendsListComplete::CreateWeakLambda(this,
-				[this](int32 LocalUserNum, bool bWasSuccessful, const FString& ListName, const FString& ErrorStr)
-				{
-					TriggerAction();
-				}));
-		}
-		else
-		{
-			TriggerAction();
-		}
-	}
-	else
-	{
-		SetReadyToDestroy();
-	}
-}
-
-void UAsyncAction_ABFriendsSubsystemGetFriendList::TriggerAction() const
-{
-	FABFriendSubsystemOnlineFriends OnlineFriends;
-	const TArray<USocialUser*> SocialUsers = SocialToolkit->GetAllUsers();
-	OnlineFriends.Data = UAccelByteCommonFriendSubsystem::BlueprintableSocialUserListConversion(SocialUsers);
-	OnComplete.Broadcast(OnlineFriends);
-}
-
 UAsyncAction_ABFriendsSubsystemSearchUser* UAsyncAction_ABFriendsSubsystemSearchUser::SearchUserByExactDisplayName(
 	UObject* WorldContextObject, int32 LocalTargetUserNum, FString DisplayName, bool bHideSelf)
 {

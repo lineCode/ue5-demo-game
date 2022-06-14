@@ -5,6 +5,7 @@
 
 #include "AccelByteCommonFriendSubsystem.h"
 
+#include "CommonUserSubsystem.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
 #include "SocialManager.h"
@@ -17,12 +18,38 @@ void UAccelByteCommonFriendSubsystem::Initialize(FSubsystemCollectionBase& Colle
 	Super::Initialize(Collection);
 }
 
-void UAccelByteCommonFriendSubsystem::GetLocalUserDisplayNameAndPlatform(FString& DisplayName, FString& Platform, ULocalPlayer* LocalPlayer)
+void UAccelByteCommonFriendSubsystem::GetFriendsList(ULocalPlayer* LocalPlayer,
+                                                     TArray<FABFriendSubsystemOnlineFriend>& ABOnlineFriends, bool& bIsDoneQuery)
 {
 	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
 	{
+		const IOnlineFriendsPtr FriendsPtr =
+			SocialToolkit->GetSocialOss(ESocialSubsystem::Primary)->GetFriendsInterface();
+		check(FriendsPtr);
+
+		TArray<TSharedRef<FOnlineFriend>> TempOnlineFriends;
+		if (FriendsPtr->GetFriendsList(LocalPlayer->GetLocalPlayerIndex(), "", TempOnlineFriends))
+		{
+			ABOnlineFriends = BlueprintableSocialUserListConversion(SocialToolkit->GetAllUsers());
+			bIsDoneQuery = true;
+			return;
+		}
+	}
+	bIsDoneQuery = false;
+}
+
+void UAccelByteCommonFriendSubsystem::GetLocalUserDisplayNameAndPlatform(FString& DisplayName, FString& Platform, ULocalPlayer* LocalPlayer)
+{
+	if (USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
+	{
+		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
+		check(OSS);
+
+		const IOnlineIdentityPtr IdentityPtr = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary)->GetIdentityInterface();
+		check(IdentityPtr);
+
 		DisplayName = SocialToolkit->GetLocalUser().GetDisplayName(ESocialSubsystem::Primary);
-		Platform = SocialToolkit->GetLocalUser().GetCurrentPlatform().ToString();
+		Platform = SocialToolkit->GetLocalUser().GetCurrentPlatform();
 	}
 }
 
@@ -124,9 +151,15 @@ void UAccelByteCommonFriendSubsystem::OnUserPresenceChange(ULocalPlayer* LocalPl
 
 		SocialUser->OnUserPresenceChanged().AddWeakLambda(this,
 			[OnPresenceChange, SocialUser](ESocialSubsystem SocialSubsystem)
-		{
-			OnPresenceChange.ExecuteIfBound(SocialUser->IsPlayingThisGame(), SocialUser->GetCurrentPlatform());
-		});
+			{
+				FString IsPlayingThisGameString = SocialUser->IsPlayingThisGame()? "TRUE" : "FALSE";
+				UE_LOG(LogTemp, Warning, TEXT("Friend Oss: Friend's presence changed: %s | IsPlayingThisGame: %s | Platform: %s"),
+					*SocialUser->GetDisplayName(),
+					*IsPlayingThisGameString,
+					*SocialUser->GetCurrentPlatform().ToString());
+
+				OnPresenceChange.ExecuteIfBound(SocialUser->IsPlayingThisGame(), SocialUser->GetCurrentPlatform());
+			});
 	}
 }
 

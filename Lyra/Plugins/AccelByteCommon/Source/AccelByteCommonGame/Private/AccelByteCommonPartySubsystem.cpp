@@ -4,308 +4,448 @@
 #include "AccelByteCommonPartySubsystem.h"
 
 #include "Online.h"
-#include "OnlinePartyInterfaceAccelByte.h"
+#include "OnlineSubsystemUtils.h"
 #include "SocialManager.h"
-#include "Party/PartyMember.h"
 #include "Party/SocialParty.h"
 
-UAccelByteCommonPartySubsystem::UAccelByteCommonPartySubsystem()
+void UAccelByteCommonPartySubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
+	Super::Initialize(Collection);
+
+	OSS = Online::GetSubsystem(GetWorld());
 }
 
-TArray<FABPartySubsystemPartyMember> UAccelByteCommonPartySubsystem::GetPartyMember(ULocalPlayer* LocalPlayer)
+void UAccelByteCommonPartySubsystem::GetPartyMember(
+	const int32 LocalPlayerIndex,
+	TArray<FABPartySubsystemPartyMember>& ABPartyMembers,
+	EPartyStatus& PartyStatus)
 {
-	TArray<FABPartySubsystemPartyMember> ABPartyMembers;
-	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
+	if (OSS)
 	{
-		const IOnlinePartyPtr PartyInf =
-			SocialToolkit->GetSocialOss(ESocialSubsystem::Primary)->GetPartyInterface();
-		check(PartyInf);
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid());
 
-		const FUniqueNetId& LocalUserId = *SocialToolkit->GetLocalUser().GetUserId(ESocialSubsystem::Primary).GetUniqueNetId();
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr.IsValid());
 
-		const FOnlinePartyConstPtr OnlineParty = PartyInf->GetParty(
-			LocalUserId,
-			FOnlinePartySystemAccelByte::FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
 
-		TArray<FOnlinePartyMemberConstRef> PartyMembers;
-		PartyInf->GetPartyMembers(
-			LocalUserId,
-			OnlineParty->PartyId.Get(),
-			PartyMembers);
-		for (const FOnlinePartyMemberConstRef PartyMember : PartyMembers)
+		const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
+
+		if (OnlineParty.IsValid())
 		{
-			ABPartyMembers.Add(BlueprintablePartyMemberData(PartyMember, LocalUserId.AsShared()));
+			if (OnlineParty->State == EPartyState::Active)
+			{
+				// party for local player found
+				TArray<FOnlinePartyMemberConstRef> PartyMembers;
+				PartyPtr->GetPartyMembers(
+					*LocalUserId,
+					OnlineParty->PartyId.Get(),
+					PartyMembers);
+
+				const FUniqueNetIdPtr LeaderUserId = OnlineParty->LeaderId;
+
+				ABPartyMembers =
+					BlueprintablePartyMembers(
+						PartyMembers, LocalUserId.ToSharedRef(), LeaderUserId.ToSharedRef());
+				PartyStatus = EPartyStatus::PartyValid;
+			}
+			else if (
+				OnlineParty->State == EPartyState::CreatePending ||
+				OnlineParty->State == EPartyState::JoinPending)
+			{
+				PartyStatus = EPartyStatus::PartyDataLoading;
+			}
+			else
+			{
+				PartyStatus = EPartyStatus::NoParty;
+			}
+			return;
+		}
+		// no party for local user found
+		PartyStatus = EPartyStatus::NoParty;
+	}
+}
+
+FUniqueNetIdRepl UAccelByteCommonPartySubsystem::GetPartyLeaderIdIfPartyExist(bool& bIsPartyExist, const int32 LocalPlayerIndex)
+{
+	if (OSS)
+	{
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid());
+
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
+
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
+
+		const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
+
+		if (OnlineParty.IsValid())
+		{
+			bIsPartyExist = true;
+			return OnlineParty->LeaderId;
 		}
 	}
-	return ABPartyMembers;
+	bIsPartyExist = false;
+	return nullptr;
 }
 
-FABPartySubsystemPartyMember UAccelByteCommonPartySubsystem::GetPartyLeader(ULocalPlayer* LocalPlayer)
+void UAccelByteCommonPartySubsystem::InviteToPartyIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& bIsPartyExist, const int32 LocalPlayerIndex)
 {
-	FABPartySubsystemPartyMember PartyLeader;
-	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
+	if (OSS)
 	{
-		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
-		check(Party);
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid());
 
-		PartyLeader = BlueprintablePartyMemberData(
-			Party->GetPartyLeader<UPartyMember>(),
-			SocialToolkit->GetLocalUser().GetUserId(ESocialSubsystem::Primary)->AsShared());
-	}
-	return PartyLeader;
-}
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
 
-void UAccelByteCommonPartySubsystem::InviteToParty(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId)
-{
-	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
-	{
-		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
-		check(Party);
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
 
-		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
-		check(OSS);
+		const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
 
-		const IOnlinePartyPtr PartyInf = OSS->GetPartyInterface();
-
-		const FUniqueNetIdRepl LocalUserId = SocialToolkit->GetLocalUser().GetUserId(ESocialSubsystem::Primary);
-
-		PartyInf->SendInvitation(*LocalUserId.GetUniqueNetId(), Party->GetPartyId(),*TargetUniqueId.GetUniqueNetId());
-	}
-}
-
-void UAccelByteCommonPartySubsystem::KickFromParty(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId)
-{
-	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
-	{
-		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
-		check(Party);
-
-		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
-		check(OSS);
-
-		const IOnlinePartyPtr PartyInf = OSS->GetPartyInterface();
-		check(PartyInf);
-
-		const FUniqueNetIdRepl LocalUserId = SocialToolkit->GetLocalUser().GetUserId(ESocialSubsystem::Primary);
-		check(TargetUniqueId.GetUniqueNetId());
-
-		PartyInf->KickMember(*LocalUserId.GetUniqueNetId(), Party->GetPartyId(),*TargetUniqueId.GetUniqueNetId());
-	}
-}
-
-void UAccelByteCommonPartySubsystem::PromoteAsLeader(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId)
-{
-	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
-	{
-		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
-		check(Party);
-
-		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
-		check(OSS);
-
-		const IOnlinePartyPtr PartyInf = OSS->GetPartyInterface();
-
-		const FUniqueNetIdRepl LocalUserId = SocialToolkit->GetLocalUser().GetUserId(ESocialSubsystem::Primary);
-
-		PartyInf->PromoteMember(*LocalUserId.GetUniqueNetId(), Party->GetPartyId(),*TargetUniqueId.GetUniqueNetId());
-	}
-}
-
-void UAccelByteCommonPartySubsystem::LeaveParty(ULocalPlayer* LocalPlayer)
-{
-	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
-	{
-		USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
-
-		Party->LeaveParty();
-	}
-}
-
-void UAccelByteCommonPartySubsystem::SetOnPartyInviteRequestReceivedDelegate(ULocalPlayer* LocalPlayer, FPartyInviteReceived OnInvitationReceived)
-{
-	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
-	{
-		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
-		check(OSS);
-
-		const IOnlinePartyPtr PartyInf = OSS->GetPartyInterface();
-
-		const FUniqueNetIdRef LocalUserId = SocialToolkit->GetLocalUser().GetUserId(ESocialSubsystem::Primary)->AsShared();
-
-		CreatePartyIfNoPartyExist(SocialToolkit, TDelegate<void()>::CreateWeakLambda(this, [SocialToolkit, PartyInf, OnInvitationReceived, this]()
+		if (OnlineParty.IsValid())
 		{
-			const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(
-				FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
-			check(Party);
+			PartyPtr->SendInvitation(*LocalUserId, *OnlineParty->PartyId,*TargetUniqueId.GetUniqueNetId());
+			bIsPartyExist = true;
+			return;
+		}
+	}
+	bIsPartyExist = false;
+}
 
-			PartyInf->OnPartyInviteReceivedDelegates.AddWeakLambda(this,
-				[SocialToolkit, OnInvitationReceived](
+void UAccelByteCommonPartySubsystem::KickFromPartyIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& bIsPartyExist, const int32 LocalPlayerIndex)
+{
+	if (OSS)
+	{
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid());
+
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
+
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
+
+		const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
+
+		if (OnlineParty.IsValid())
+		{
+			PartyPtr->KickMember(*LocalUserId, *OnlineParty->PartyId,*TargetUniqueId.GetUniqueNetId());
+			bIsPartyExist = true;
+			return;
+		}
+	}
+	bIsPartyExist = false;
+}
+
+void UAccelByteCommonPartySubsystem::PromoteAsLeaderIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& bIsPartyExist, const int32 LocalPlayerIndex)
+{
+	if (OSS)
+	{
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid());
+
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
+
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
+
+		const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
+
+		if (OnlineParty.IsValid())
+		{
+			PartyPtr->PromoteMember(*LocalUserId, *OnlineParty->PartyId,*TargetUniqueId.GetUniqueNetId());
+			bIsPartyExist = true;
+			return;
+		}
+	}
+	bIsPartyExist = false;
+}
+
+void UAccelByteCommonPartySubsystem::LeavePartyIfInParty(bool& bWasInParty, int32 LocalPlayerIndex)
+{
+	if (OSS)
+	{
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid());
+
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
+
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
+
+		const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
+
+		if (OnlineParty.IsValid())
+		{
+			PartyPtr->LeaveParty(*LocalUserId, *OnlineParty->PartyId, FOnLeavePartyComplete::CreateWeakLambda(this,
+				[this, LocalPlayerIndex](
 					const FUniqueNetId& LocalUserId,
 					const FOnlinePartyId& PartyId,
-					const FUniqueNetId& SenderId)
+					const ELeavePartyCompletionResult Result)
 				{
-					FABPartySubsystemPartyMember Sender(
-						FUniqueNetIdRepl(SenderId),
-						SocialToolkit->FindUser(SenderId.AsShared())->GetDisplayName(),
-						&PartyId);
-					OnInvitationReceived.ExecuteIfBound(Sender);
-				});
-		}));
+					bool bAutoCreateParty = false;
+					GConfig->GetBool(TEXT("AccelByteSocialToolkit"), TEXT("bAutoCreateParty"), bAutoCreateParty, GEngineIni);
+
+					if (bAutoCreateParty)
+					{
+						UE_LOG(LogTemp, Log, TEXT("bAutoCreateParty true: creating party"));
+						CreateParty(LocalPlayerIndex);
+					}
+				}));
+			bWasInParty = true;
+			return;
+		}
+	}
+	bWasInParty = false;
+}
+
+void UAccelByteCommonPartySubsystem::CreatePartyIfNotExist(bool& bWasNotInParty, int32 LocalPlayerIndex)
+{
+	if (OSS)
+	{
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid());
+
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
+
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
+
+		const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
+
+		if (!OnlineParty.IsValid())
+		{
+			CreateParty(LocalPlayerIndex);
+			bWasNotInParty = true;
+			return;
+		}
+	}
+	bWasNotInParty = false;
+}
+
+void UAccelByteCommonPartySubsystem::SetOnPartyInviteRequestReceivedDelegate(FPartyInviteReceived OnInvitationReceived, int32 LocalPlayerIndex)
+{
+	if (OSS)
+	{
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid());
+
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
+
+		const IOnlineFriendsPtr FriendsPtr = OSS->GetFriendsInterface();
+		check(FriendsPtr);
+
+		PartyPtr->OnPartyInviteReceivedDelegates.AddWeakLambda(this,
+			[OnInvitationReceived, LocalPlayerIndex, FriendsPtr](
+				const FUniqueNetId& LocalUserId,
+				const FOnlinePartyId& PartyId,
+				const FUniqueNetId& SenderId)
+			{
+				const FABPartySubsystemPartyMember Sender(
+					FUniqueNetIdRepl(SenderId),
+					FriendsPtr->GetFriend(LocalPlayerIndex, SenderId, "")->GetDisplayName(),
+					&PartyId);
+				OnInvitationReceived.ExecuteIfBound(Sender);
+			});
 	}
 }
 
-void UAccelByteCommonPartySubsystem::AcceptPartyInvite(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl SenderUniqueId)
+void UAccelByteCommonPartySubsystem::SetOnPartyDataChangeDelegate(FPartyVoidDelegate OnChange, int32 LocalPlayerIndex)
 {
-	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
+	if (OSS)
 	{
-		USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr);
 
-		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
-		check(OSS);
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
 
-		const IOnlinePartyPtr PartyInf = OSS->GetPartyInterface();
-		check(PartyInf.IsValid());
+		// Called when user joined party
+		PartyPtr->OnPartyMemberJoinedDelegates.AddWeakLambda(this,
+			[OnChange](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId, const FUniqueNetId& MemberId)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Party OSS: Joined party"));
+				OnChange.ExecuteIfBound();
+			});
 
-		const FUniqueNetIdPtr LocalUserId =
-			SocialToolkit->GetLocalUser().GetUserId(ESocialSubsystem::Primary).GetUniqueNetId();
+		// Called on left party
+		PartyPtr->OnPartyExitedDelegates.AddWeakLambda(this,
+			[this](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Party OSS: Local user left party"));
+			});
 
-		if (Party)
+		// Called on join another party
+		PartyPtr->OnPartyJoinedDelegates.AddWeakLambda(this,
+			[OnChange](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Party OSS: Local user left party"));
+				OnChange.ExecuteIfBound();
+			});
+
+		// Called on member left party
+		PartyPtr->OnPartyMemberExitedDelegates.AddWeakLambda(this,
+			[OnChange](
+				const FUniqueNetId& /*LocalUserId*/,
+				const FOnlinePartyId& /*PartyId*/,
+				const FUniqueNetId& /*MemberId*/,
+				const EMemberExitedReason /*Reason*/)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Party OSS: Party member exited"));
+				OnChange.ExecuteIfBound();
+			});
+
+		// Called on member successfully promoted
+		PartyPtr->OnPartyMemberPromotedDelegates.AddWeakLambda(this,
+			[OnChange](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId, const FUniqueNetId& NewLeaderId)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Party OSS: Party member promoted"));
+				OnChange.ExecuteIfBound();
+			});
+	}
+}
+
+void UAccelByteCommonPartySubsystem::AcceptPartyInvite(FUniqueNetIdRepl SenderUniqueId, int32 LocalPlayerIndex)
+{
+	if (OSS)
+	{
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid());
+
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
+
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
+
+		const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
+
+		if (OnlineParty.IsValid())
 		{
-			Party->LeaveParty(USocialParty::FOnLeavePartyAttemptComplete::CreateWeakLambda(this,
-				[PartyInf, LocalUserId, SenderUniqueId, this](ELeavePartyCompletionResult Result)
+			PartyPtr->LeaveParty(*LocalUserId, *OnlineParty->PartyId, FOnLeavePartyComplete::CreateWeakLambda(this,
+				[PartyPtr, SenderUniqueId, LocalUserId, this](
+					const FUniqueNetId& ResultLocalUserId,
+					const FOnlinePartyId& PartyId,
+					const ELeavePartyCompletionResult Result)
 				{
-					AcceptInviteRequest(PartyInf, LocalUserId, SenderUniqueId.GetUniqueNetId());
+					AcceptInviteRequest(PartyPtr, LocalUserId, SenderUniqueId.GetUniqueNetId());
 				}));
 		}
 		else
 		{
-			AcceptInviteRequest(PartyInf, LocalUserId, SenderUniqueId.GetUniqueNetId());
+			AcceptInviteRequest(PartyPtr, LocalUserId, SenderUniqueId.GetUniqueNetId());
 		}
 	}
 }
 
-void UAccelByteCommonPartySubsystem::RejectPartyInvite(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl SenderUniqueId)
+void UAccelByteCommonPartySubsystem::RejectPartyInvite(FUniqueNetIdRepl SenderUniqueId, int32 LocalPlayerIndex)
 {
-	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
+	if (OSS)
 	{
-		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
-		check(OSS);
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid())
 
-		const IOnlinePartyPtr PartyInf = OSS->GetPartyInterface();
-		check(PartyInf.IsValid())
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
 
-		const FUniqueNetIdRepl LocalUserId = SocialToolkit->GetLocalUser().GetUserId(ESocialSubsystem::Primary);
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
 
-		PartyInf->RejectInvitation(*LocalUserId.GetUniqueNetId(), *SenderUniqueId.GetUniqueNetId());
+		PartyPtr->RejectInvitation(*LocalUserId, *SenderUniqueId.GetUniqueNetId());
 	}
 }
 
-void UAccelByteCommonPartySubsystem::SetOnPartyDataChangeDelegate(ULocalPlayer* LocalPlayer, FPartyVoidDelegate OnChange)
+bool UAccelByteCommonPartySubsystem::IsLocalUserLeader(int32 LocalPlayerIndex)
 {
-	if (const USocialToolkit* SocialToolkit = USocialToolkit::GetToolkitForPlayer(LocalPlayer))
+	if (OSS)
 	{
-		const USocialParty* Party = SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId());
-		check(Party);
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid());
 
-		const IOnlineSubsystem* OSS = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary);
-		check(OSS);
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
 
-		const IOnlinePartyPtr PartyInf = OSS->GetPartyInterface();
-		IOnlineIdentityPtr IdentityInf = OSS->GetIdentityInterface();
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
 
-		// Called when invite received
-		PartyInf->OnPartyMemberJoinedDelegates.AddWeakLambda(this,
-			[OnChange](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId, const FUniqueNetId& MemberId)
-			{
-				OnChange.ExecuteIfBound();
-			});
+		const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
 
-		// testing purpose
-		PartyInf->OnPartyDataReceivedDelegates.AddWeakLambda(this,
-			[](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId, const FName& Namespace, const FOnlinePartyData& PartyData)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("DATA RECEIVED"));
-			});
-
-		PartyInf->OnPartyJoinedDelegates.AddWeakLambda(this,
-			[](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("PARTY JOINED"));
-			});
-
-		PartyInf->OnPartyMemberDataReceivedDelegates.AddWeakLambda(this,
-			[](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId, const FUniqueNetId& MemberId, const FName& Namespace, const FOnlinePartyData& PartyData)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("MEMBER DATA RECEIVED"));
-			});
-
-		PartyInf->OnPartyExitedDelegates.AddWeakLambda(this,
-			[](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("LEFT PARTY"));
-			});
+		if (OnlineParty.IsValid())
+		{
+			return LocalUserId == OnlineParty->LeaderId;
+		}
 	}
+	return false;
 }
 
-void UAccelByteCommonPartySubsystem::CreatePartyIfNoPartyExist(const USocialToolkit* SocialToolkit, TDelegate<void()> OnComplete)
+bool UAccelByteCommonPartySubsystem::ShouldAutoCreateParty()
 {
-	if (SocialToolkit->GetSocialManager().GetParty(FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId()))
+	bool bAutoCreateParty = false;
+	GConfig->GetBool(TEXT("AccelByteSocialToolkit"), TEXT("bAutoCreateParty"), bAutoCreateParty, GEngineIni);
+	return bAutoCreateParty;
+}
+
+void UAccelByteCommonPartySubsystem::CreateParty(int32 LocalPlayerIndex, TDelegate<void()> OnComplete)
+{
+	if (OSS)
 	{
-		OnComplete.ExecuteIfBound();
-	}
-	else
-	{
-		FPartyConfiguration PartyConfiguration;
-		PartyConfiguration.bIsAcceptingMembers = true;
-		SocialToolkit->GetSocialManager().CreateParty(
-			FOnlinePartyTypeId(0),
-			FOnlinePartySystemAccelByte::GetAccelBytePartyTypeId(),
-			PartyConfiguration,
-			USocialManager::FOnCreatePartyAttemptComplete::CreateWeakLambda(this,
-				[OnComplete](ECreatePartyCompletionResult Result)
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr);
+
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
+
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
+
+		PartyPtr->CreateParty(
+			*LocalUserId,
+			PartyTypeId,
+			FPartyConfiguration(),
+			FOnCreatePartyComplete::CreateWeakLambda(this,
+				[OnComplete](
+					const FUniqueNetId& LocalUserId,
+					const TSharedPtr<const FOnlinePartyId>& PartyId,
+					const ECreatePartyCompletionResult Result)
 				{
-					const bool bIsFailed =
-						Result == ECreatePartyCompletionResult::FailedToCreateMucRoom ||
-						Result == ECreatePartyCompletionResult::UnknownInternalFailure ||
-						Result == ECreatePartyCompletionResult::UnknownClientFailure;
-					if (!bIsFailed)
-					{
-						OnComplete.ExecuteIfBound();
-					}
+					OnComplete.ExecuteIfBound();
 				}));
 	}
 }
 
-FABPartySubsystemPartyMember UAccelByteCommonPartySubsystem::BlueprintablePartyMemberData(
-	const UPartyMember* PartyMember, FUniqueNetIdRef LocalUserId)
+FABPartySubsystemPartyMember UAccelByteCommonPartySubsystem::BlueprintablePartyMember(
+	const FOnlinePartyMemberConstRef PartyMember)
 {
-	FABPartySubsystemPartyMember ABPartyMember = FABPartySubsystemPartyMember(
-		PartyMember->GetSocialUser().GetUserId(ESocialSubsystem::Primary),
-		PartyMember->GetDisplayName(),
-		PartyMember->IsPartyLeader());
-	ABPartyMember.bIsLocalUser = ABPartyMember.UserInfo.UserId == LocalUserId;
-
-	return ABPartyMember;
-}
-
-FABPartySubsystemPartyMember UAccelByteCommonPartySubsystem::BlueprintablePartyMemberData(
-	const FOnlinePartyMemberConstRef PartyMember, FUniqueNetIdRef LocalUserId)
-{
-	FABPartySubsystemPartyMember ABPartyMember = FABPartySubsystemPartyMember(
+	return FABPartySubsystemPartyMember(
 		PartyMember->GetUserId(),
 		PartyMember->GetDisplayName(),
 		false);
-	ABPartyMember.bIsLocalUser = ABPartyMember.UserInfo.UserId == LocalUserId;
-
-	return ABPartyMember;
 }
 
-void UAccelByteCommonPartySubsystem::AcceptInviteRequest(IOnlinePartyPtr PartyInf, FUniqueNetIdPtr LocalUserUniqueId, FUniqueNetIdPtr SenderUniqueId)
+TArray<FABPartySubsystemPartyMember> UAccelByteCommonPartySubsystem::BlueprintablePartyMembers(
+	const TArray<FOnlinePartyMemberConstRef>& PartyMembers, FUniqueNetIdRef LocalUserId, FUniqueNetIdRef LeaderUserId)
+{
+	TArray<FABPartySubsystemPartyMember> ABPartyMembers;
+	for (const FOnlinePartyMemberConstRef PartyMember : PartyMembers)
+	{
+		FABPartySubsystemPartyMember ABPartyMember = FABPartySubsystemPartyMember(
+			PartyMember->GetUserId(),
+			PartyMember->GetDisplayName(),
+			false);
+		ABPartyMember.bIsLocalUser = ABPartyMember.UserInfo.UserId == LocalUserId;
+		ABPartyMember.bIsLeader = ABPartyMember.UserInfo.UserId == LeaderUserId;
+		ABPartyMembers.Add(ABPartyMember);
+	}
+	return ABPartyMembers;
+}
+
+void UAccelByteCommonPartySubsystem::AcceptInviteRequest(
+	IOnlinePartyPtr PartyPtr,
+	FUniqueNetIdPtr LocalUserUniqueId,
+	FUniqueNetIdPtr SenderUniqueId)
 {
 	IOnlinePartyJoinInfoConstPtr TargetPartyJoinInfo;
 	TArray<IOnlinePartyJoinInfoConstRef> PartyJoinInfos;
-	PartyInf->GetPendingInvites(
+	PartyPtr->GetPendingInvites(
 		*LocalUserUniqueId,
 		PartyJoinInfos);
 	for (const IOnlinePartyJoinInfoConstRef PartyJoinInfo : PartyJoinInfos)
@@ -315,5 +455,5 @@ void UAccelByteCommonPartySubsystem::AcceptInviteRequest(IOnlinePartyPtr PartyIn
 			TargetPartyJoinInfo = PartyJoinInfo;
 		}
 	}
-	PartyInf->JoinParty(*LocalUserUniqueId, *TargetPartyJoinInfo);
+	PartyPtr->JoinParty(*LocalUserUniqueId, *TargetPartyJoinInfo);
 }
