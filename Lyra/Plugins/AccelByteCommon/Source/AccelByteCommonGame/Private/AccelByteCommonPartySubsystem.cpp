@@ -425,7 +425,7 @@ TArray<FABPartySubsystemPartyMember> UAccelByteCommonPartySubsystem::Blueprintab
 	const TArray<FOnlinePartyMemberConstRef>& PartyMembers, FUniqueNetIdRef LocalUserId, FUniqueNetIdRef LeaderUserId)
 {
 	TArray<FABPartySubsystemPartyMember> ABPartyMembers;
-	for (const FOnlinePartyMemberConstRef PartyMember : PartyMembers)
+	for (const FOnlinePartyMemberConstRef& PartyMember : PartyMembers)
 	{
 		FABPartySubsystemPartyMember ABPartyMember = FABPartySubsystemPartyMember(
 			PartyMember->GetUserId(),
@@ -448,7 +448,7 @@ void UAccelByteCommonPartySubsystem::AcceptInviteRequest(
 	PartyPtr->GetPendingInvites(
 		*LocalUserUniqueId,
 		PartyJoinInfos);
-	for (const IOnlinePartyJoinInfoConstRef PartyJoinInfo : PartyJoinInfos)
+	for (const IOnlinePartyJoinInfoConstRef& PartyJoinInfo : PartyJoinInfos)
 	{
 		if (PartyJoinInfo->GetSourceUserId() == SenderUniqueId)
 		{
