@@ -152,12 +152,6 @@ void UAccelByteCommonFriendSubsystem::OnUserPresenceChange(ULocalPlayer* LocalPl
 		SocialUser->OnUserPresenceChanged().AddWeakLambda(this,
 			[OnPresenceChange, SocialUser](ESocialSubsystem SocialSubsystem)
 			{
-				FString IsPlayingThisGameString = SocialUser->IsPlayingThisGame()? "TRUE" : "FALSE";
-				UE_LOG(LogTemp, Warning, TEXT("Friend Oss: Friend's presence changed: %s | IsPlayingThisGame: %s | Platform: %s"),
-					*SocialUser->GetDisplayName(),
-					*IsPlayingThisGameString,
-					*SocialUser->GetCurrentPlatform().ToString());
-
 				OnPresenceChange.ExecuteIfBound(SocialUser->IsPlayingThisGame(), SocialUser->GetCurrentPlatform());
 			});
 	}

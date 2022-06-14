@@ -62,6 +62,8 @@ enum class EPartyStatus : uint8
 
 #pragma endregion
 
+DECLARE_LOG_CATEGORY_CLASS(LogAccelByteCommonParty, Log, All);
+
 DECLARE_DYNAMIC_DELEGATE_OneParam(FPartyInviteReceived, FABPartySubsystemPartyMember, Inviter);
 DECLARE_DYNAMIC_DELEGATE(FPartyVoidDelegate);
 

@@ -190,7 +190,7 @@ void UAccelByteCommonPartySubsystem::LeavePartyIfInParty(bool& bWasInParty, int3
 
 					if (bAutoCreateParty)
 					{
-						UE_LOG(LogTemp, Log, TEXT("bAutoCreateParty true: creating party"));
+						UE_LOG(LogAccelByteCommonParty, Log, TEXT("bAutoCreateParty true: creating party"));
 						CreateParty(LocalPlayerIndex);
 					}
 				}));
@@ -267,7 +267,7 @@ void UAccelByteCommonPartySubsystem::SetOnPartyDataChangeDelegate(FPartyVoidDele
 		PartyPtr->OnPartyMemberJoinedDelegates.AddWeakLambda(this,
 			[OnChange](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId, const FUniqueNetId& MemberId)
 			{
-				UE_LOG(LogTemp, Log, TEXT("Party OSS: Joined party"));
+				UE_LOG(LogAccelByteCommonParty, Log, TEXT("Joined party"));
 				OnChange.ExecuteIfBound();
 			});
 
@@ -275,14 +275,14 @@ void UAccelByteCommonPartySubsystem::SetOnPartyDataChangeDelegate(FPartyVoidDele
 		PartyPtr->OnPartyExitedDelegates.AddWeakLambda(this,
 			[this](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId)
 			{
-				UE_LOG(LogTemp, Log, TEXT("Party OSS: Local user left party"));
+				UE_LOG(LogAccelByteCommonParty, Log, TEXT("Local user left party"));
 			});
 
 		// Called on join another party
 		PartyPtr->OnPartyJoinedDelegates.AddWeakLambda(this,
 			[OnChange](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId)
 			{
-				UE_LOG(LogTemp, Log, TEXT("Party OSS: Local user left party"));
+				UE_LOG(LogAccelByteCommonParty, Log, TEXT("Local joined party"));
 				OnChange.ExecuteIfBound();
 			});
 
@@ -294,7 +294,7 @@ void UAccelByteCommonPartySubsystem::SetOnPartyDataChangeDelegate(FPartyVoidDele
 				const FUniqueNetId& /*MemberId*/,
 				const EMemberExitedReason /*Reason*/)
 			{
-				UE_LOG(LogTemp, Log, TEXT("Party OSS: Party member exited"));
+				UE_LOG(LogAccelByteCommonParty, Log, TEXT("Party member exited"));
 				OnChange.ExecuteIfBound();
 			});
 
@@ -302,7 +302,7 @@ void UAccelByteCommonPartySubsystem::SetOnPartyDataChangeDelegate(FPartyVoidDele
 		PartyPtr->OnPartyMemberPromotedDelegates.AddWeakLambda(this,
 			[OnChange](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId, const FUniqueNetId& NewLeaderId)
 			{
-				UE_LOG(LogTemp, Log, TEXT("Party OSS: Party member promoted"));
+				UE_LOG(LogAccelByteCommonParty, Log, TEXT("Party member promoted"));
 				OnChange.ExecuteIfBound();
 			});
 	}
