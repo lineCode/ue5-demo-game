@@ -4,9 +4,11 @@
 
 #include "AccelByteEndgame.h"
 #include "Json.h"
+#if UE_EDITOR
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
 #include "ISettingsContainer.h"
+#endif
 #include "AccelbyteEndgameSettings.h"
 #define LOCTEXT_NAMESPACE "FAccelByteEndgameModule"
 
