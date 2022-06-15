@@ -17,16 +17,22 @@ void UAccelByteCommonServerSubsystem::Initialize(FSubsystemCollectionBase& Colle
 {
 	Super::Initialize(Collection);
 	
-	FString GameVersion;
 	GConfig->GetString(
 		TEXT("/Script/EngineSettings.GeneralProjectSettings"),
 		TEXT("ProjectVersion"),
-		GameVersion,
+		ProjectVersion,
 		GGameIni
 	);
 
+	GConfig->GetString(
+		TEXT("/Script/EngineSettings.GeneralProjectSettings"),
+		TEXT("GitHash"),
+		GitHash,
+		GGameIni
+	);
+	
 	// Log out the game version, debugging purpose.
-	UE_LOG(LogAccelByteCommonServer, Log, TEXT("GAME VERSION = %s"), *GameVersion);
+	UE_LOG(LogAccelByteCommonServer, Log, TEXT("BuildVersion = %s-%s"), *ProjectVersion, *GitHash);
 }
 
 void UAccelByteCommonServerSubsystem::Deinitialize()

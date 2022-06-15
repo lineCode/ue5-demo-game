@@ -16,6 +16,7 @@ UCommonSession_HostSessionRequest* ULyraUserFacingExperienceDefinition::CreateHo
 	Result->ExtraArgs.Add(TEXT("Experience"), ExperienceName);
 	Result->MaxPlayerCount = MaxPlayerCount;
 	Result->AccelByteGameMode = AccelByteGameMode;
+	Result->ServerType = ECommonSessionOnlineServerType::P2P;
 
 	if (bRecordReplay)
 	{

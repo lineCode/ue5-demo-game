@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "LyraExperienceManagerComponent.h"
+
+#include "CommonSessionSubsystem.h"
 #include "Net/UnrealNetwork.h"
 #include "LyraExperienceDefinition.h"
 #include "LyraExperienceActionSet.h"
@@ -343,6 +345,15 @@ void ULyraExperienceManagerComponent::OnExperienceFullLoadCompleted()
 	OnExperienceLoaded_LowPriority.Broadcast(CurrentExperience);
 	OnExperienceLoaded_LowPriority.Clear();
 
+	UGameInstance* GameInstance = GetGameInstance<UGameInstance>();
+	if(GameInstance)
+	{
+		UCommonSessionSubsystem* Session = GameInstance->GetSubsystem<UCommonSessionSubsystem>();
+		if(Session)
+		{
+			Session->StartSession();
+		}
+	}
 	// Apply any necessary scalability settings
 #if !UE_SERVER
 	ULyraSettingsLocal::Get()->OnExperienceLoaded();

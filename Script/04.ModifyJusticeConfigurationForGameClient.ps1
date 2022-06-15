@@ -15,6 +15,7 @@ Write-Output "Modifying ${DefaultEngineConfigPath}..."
 $iniContent = Get-Content -path $DefaultEngineConfigPath
 $iniContent = $iniContent.replace('<<game_client_client_id>>', $GameClient_ClientID)
 $iniContent = $iniContent.replace('<<game_client_client_secret>>', $GameClient_ClientSecret)
+$iniContent = $iniContent.replace('<<turn_server_secret>>', $TurnServerSecret)
 Set-Content -Path $DefaultEngineConfigPath -Value $iniContent -Force
 Write-Output "Modifying ${DefaultEngineConfigPath}...DONE!"
 

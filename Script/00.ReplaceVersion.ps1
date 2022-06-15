@@ -46,3 +46,9 @@ Write-Output "Replace Version on DefaultGame.ini"
 Set-OrAddIniValue -FilePath $GameIniPath -keyValueList @{
     ProjectVersion = $Version
 }
+
+Write-Output "Replace GitHash on DefaultGame.ini"
+$commitHash = (git rev-parse HEAD).Substring(0,7)
+Set-OrAddIniValue -FilePath $GameIniPath -keyValueList @{
+    GitHash = $commitHash
+}
