@@ -9,7 +9,7 @@
 #include "ISettingsSection.h"
 #include "ISettingsContainer.h"
 #endif
-#include "AccelbyteEndgameSettings.h"
+#include "AccelByteEndgameSettings.h"
 #define LOCTEXT_NAMESPACE "FAccelByteEndgameModule"
 
 using namespace endgame;
