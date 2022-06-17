@@ -6,6 +6,7 @@
 #include "Online.h"
 #include "OnlineSubsystemUtils.h"
 #include "SocialManager.h"
+#include "Messaging/CommonGameDialog.h"
 #include "Party/SocialParty.h"
 
 void UAccelByteCommonPartySubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -13,6 +14,8 @@ void UAccelByteCommonPartySubsystem::Initialize(FSubsystemCollectionBase& Collec
 	Super::Initialize(Collection);
 
 	OSS = Online::GetSubsystem(GetWorld());
+
+	SetOnPartyInviteRequestReceivedDelegate();
 }
 
 void UAccelByteCommonPartySubsystem::GetPartyMember(
@@ -225,7 +228,7 @@ void UAccelByteCommonPartySubsystem::CreatePartyIfNotExist(bool& bWasNotInParty,
 	bWasNotInParty = false;
 }
 
-void UAccelByteCommonPartySubsystem::SetOnPartyInviteRequestReceivedDelegate(FPartyInviteReceived OnInvitationReceived, int32 LocalPlayerIndex)
+void UAccelByteCommonPartySubsystem::SetOnPartyInviteRequestReceivedDelegate(int32 LocalPlayerIndex)
 {
 	if (OSS)
 	{
@@ -239,7 +242,7 @@ void UAccelByteCommonPartySubsystem::SetOnPartyInviteRequestReceivedDelegate(FPa
 		check(FriendsPtr);
 
 		PartyPtr->OnPartyInviteReceivedDelegates.AddWeakLambda(this,
-			[OnInvitationReceived, LocalPlayerIndex, FriendsPtr](
+			[LocalPlayerIndex, FriendsPtr, this](
 				const FUniqueNetId& LocalUserId,
 				const FOnlinePartyId& PartyId,
 				const FUniqueNetId& SenderId)
@@ -248,7 +251,8 @@ void UAccelByteCommonPartySubsystem::SetOnPartyInviteRequestReceivedDelegate(FPa
 					FUniqueNetIdRepl(SenderId),
 					FriendsPtr->GetFriend(LocalPlayerIndex, SenderId, "")->GetDisplayName(),
 					&PartyId);
-				OnInvitationReceived.ExecuteIfBound(Sender);
+
+				ShowReceivedInvitePopup(this, Sender, LocalPlayerIndex);
 			});
 	}
 }
@@ -409,6 +413,39 @@ void UAccelByteCommonPartySubsystem::CreateParty(int32 LocalPlayerIndex, TDelega
 				{
 					OnComplete.ExecuteIfBound();
 				}));
+	}
+}
+
+void UAccelByteCommonPartySubsystem::ShowReceivedInvitePopup(UObject* WorldContextObject, FABPartySubsystemPartyMember Sender, int32 LocalPlayerIndex)
+{
+	ULocalPlayer* TargetLocalPlayer =
+		WorldContextObject->GetWorld()->GetGameInstance()->GetPrimaryPlayerController(false)->GetLocalPlayer();
+
+	const FText Header = FText::FromString("Party Invitation");
+	const FText Body = FText::FromString(Sender.UserInfo.DisplayName + " sent party invitation" + LINE_TERMINATOR + "Would you like to accept?");
+
+	UCommonGameDialogDescriptor* Descriptor = UCommonGameDialogDescriptor::CreateConfirmationYesNo(Header, Body);
+
+	if (TargetLocalPlayer)
+	{
+		if (UCommonMessagingSubsystem* Messaging = TargetLocalPlayer->GetSubsystem<UCommonMessagingSubsystem>())
+		{
+			FCommonMessagingResultDelegate ResultCallback = FCommonMessagingResultDelegate::CreateWeakLambda(this,
+				[Sender, this, LocalPlayerIndex](ECommonMessagingResult Result)
+				{
+					switch (Result)
+					{
+					case ECommonMessagingResult::Confirmed:
+						AcceptPartyInvite(Sender.UserInfo.UserId, LocalPlayerIndex);
+						break;
+					default:
+						RejectPartyInvite(Sender.UserInfo.UserId, LocalPlayerIndex);
+						break;
+					}
+				});
+			Messaging->ShowConfirmation(Descriptor, ResultCallback);
+			return;
+		}
 	}
 }
 
