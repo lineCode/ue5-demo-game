@@ -108,18 +108,24 @@ void UAccelByteCommonServerSubsystem::TryConstructSession()
 void UAccelByteCommonServerSubsystem::TryDestructSession()
 {
 #if UE_SERVER
-	GetServerApi()->ServerDSM.SendShutdownToDSM(
-		true,
-		SessionData.Session_id,
-		FVoidHandler::CreateLambda([this]()
-		{
-			UE_LOG(LogAccelByteCommonServer, Log, TEXT("Shutting Down the Server Success!"));
-		}),
-		FErrorHandler::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnAccelByteCommonServerError));
-
-	if(SessionData.Joinable && !SessionData.Match.Match_id.IsEmpty())
+	// Kick all player before sending shutdown!
+	UWorld* World = GetWorld();
+	if(World)
 	{
-		DequeueJoinable();
+		for(FConstPlayerControllerIterator PlayerIterator = World->GetPlayerControllerIterator(); PlayerIterator; ++PlayerIterator)
+		{
+			UE_LOG(LogAccelByteCommonServer, Warning, TEXT("Kicking player %s!"), *PlayerIterator->Get()->GetName());
+			World->GetAuthGameMode()->GameSession->KickPlayer(PlayerIterator->Get(), FText::FromString(TEXT("Game Complete, DS Destruction start")));
+		}
+		World->GetTimerManager().SetTimer(DestructDSHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			DestructSession();
+		}), 5, false);
+	}
+	else
+	{
+		UE_LOG(LogAccelByteCommonServer, Warning, TEXT("Server is shuting down without waiting user to disconnected! this might cause issue!"))
+		DestructSession();
 	}
 #endif
 }
@@ -245,6 +251,26 @@ void UAccelByteCommonServerSubsystem::DequeueJoinable()
 		FVoidHandler(),
 		FErrorHandler::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnQuerySessionStatusFailed)
 	);
+}
+
+void UAccelByteCommonServerSubsystem::DestructSession()
+{
+#if UE_SERVER
+	UE_LOG(LogAccelByteCommonServer, Log, TEXT("Sending Shutdown to DSM!"));
+	GetServerApi()->ServerDSM.SendShutdownToDSM(
+		true,
+		SessionData.Session_id,
+		FVoidHandler::CreateLambda([this]()
+		{
+			UE_LOG(LogAccelByteCommonServer, Log, TEXT("Shutting Down the Server Success!"));
+		}),
+		FErrorHandler::CreateUObject(this, &UAccelByteCommonServerSubsystem::OnAccelByteCommonServerError));
+
+	if(SessionData.Joinable && !SessionData.Match.Match_id.IsEmpty())
+	{
+		DequeueJoinable();
+	}
+#endif
 }
 
 AccelByte::FServerApiClientPtr UAccelByteCommonServerSubsystem::GetServerApi()
