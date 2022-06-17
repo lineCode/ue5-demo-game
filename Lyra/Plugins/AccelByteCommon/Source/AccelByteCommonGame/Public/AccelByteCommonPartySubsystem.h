@@ -6,6 +6,7 @@
 #include "AccelByteCommonFriendSubsystem.h"
 #include "OnlinePartyInterfaceAccelByte.h"
 #include "SocialToolkit.h"
+#include "Messaging/CommonMessagingSubsystem.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "AccelByteCommonPartySubsystem.generated.h"
 
@@ -156,7 +157,7 @@ public:
 	 * @param LocalPlayerIndex Local player index
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
-	void SetOnPartyInviteRequestReceivedDelegate(FPartyInviteReceived OnInvitationReceived, int32 LocalPlayerIndex = 0);
+	void SetOnPartyInviteRequestReceivedDelegate(int32 LocalPlayerIndex = 0);
 
 	/**
 	 * Set delegate that will be called upon multiple cases
@@ -200,6 +201,8 @@ public:
 
 protected:
 	void CreateParty(int32 LocalPlayerIndex, TDelegate<void()> OnComplete = TDelegate<void()>());
+
+	void ShowReceivedInvitePopup(UObject* WorldContextObject, FABPartySubsystemPartyMember Sender, int32 LocalPlayerIndex);
 
 	static FABPartySubsystemPartyMember BlueprintablePartyMember(const FOnlinePartyMemberConstRef PartyMember);
 
