@@ -143,6 +143,7 @@ protected:
 	virtual void GetSessionIdDSM();
 	virtual void EnqueueJoinable();
 	virtual void DequeueJoinable();
+	virtual void DestructSession();
 	
 	UFUNCTION()
 	void OnServerLoginSuccess();
@@ -186,4 +187,6 @@ private:
 	// temporary put the version in this class, might be better create a new class
 	FString ProjectVersion;
 	FString GitHash;
+
+	FTimerHandle DestructDSHandle;
 };
