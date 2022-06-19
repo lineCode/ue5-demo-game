@@ -68,15 +68,7 @@ namespace endgame {
 
     typedef TSharedPtr<Handler> HandlerPtr;
 
-    HandlerPtr CreateHandler(HandlerCallback callback)
-    {
-        HandlerPtr handler = HandlerPtr(new Handler());
-        
-        handler->callback = callback;
-        handler->id = FGuid::NewGuid();
-        handler->alive = true;
-        return handler;
-    }
+    HandlerPtr CreateHandler(HandlerCallback callback);
 }
 
 class FAccelByteEndgameModule : public IModuleInterface
@@ -87,7 +79,7 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-    void GetOrCreatePlayer(FString uniquePlayerId, FGuid gameId, endgame::HandlerPtr getOrCreatePlayerHandler) const;
+    void GetOrCreatePlayer(FString uniquePlayerId, endgame::HandlerPtr getOrCreatePlayerHandler) const;
     void GetPlayerInGame(FGuid playerId, FGuid gameId, endgame::HandlerPtr handler) const;
     void GetPlayerByUniqueId(FString uniquePlayerId, FGuid gameId, endgame::HandlerPtr handler) const;
     void EnsurePlayerAddedToGame(endgame::Player player, FGuid gameId, FString uniquePlayerId, endgame::HandlerPtr ensurePlayerInGameHandler) const;
@@ -95,6 +87,7 @@ public:
     void AddPlayerToGame(FGuid playerId, FGuid gameId, FString playerGameDataJson, endgame::HandlerPtr handler) const;
     void CreateNewPlayer(FString playerData, endgame::HandlerPtr handler) const;
 
+    endgame::HandlerPtr AwardToken(FString userName, FGuid itemId);
 private:
 
     void OnResponseReceived(FHttpRequestPtr request, FHttpResponsePtr response, bool bConnectedSuccessfully);
@@ -120,9 +113,4 @@ private:
     FGuid m_gameId;
     FGuid m_namespaceId;
     FString m_apiKey;
-
-    /////////////// TEST //////////////////////////
-
-    void TestAwardToken(FString userName, FGuid itemId);
-    endgame::HandlerPtr m_testHandler;
 };

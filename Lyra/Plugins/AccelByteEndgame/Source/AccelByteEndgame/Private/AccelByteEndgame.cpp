@@ -64,6 +64,21 @@ namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 
+namespace endgame
+{
+	HandlerPtr CreateHandler(HandlerCallback callback)
+	{
+		HandlerPtr handler = HandlerPtr(new Handler());
+
+		handler->callback = callback;
+		handler->id = FGuid::NewGuid();
+		handler->alive = true;
+		return handler;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 void FAccelByteEndgameModule::StartupModule()
 {
 	RegisterSettings();
@@ -194,7 +209,7 @@ FHttpRequestRef FAccelByteEndgameModule::CreateEndgameRequest
 		}
 	}
 
-	path = "localhost:8080/" + path;
+	path = m_baseAddress + path;
 
 	UE_LOG(LogTemp, Display, TEXT("Endgame request %s"), *path);
 
@@ -436,13 +451,12 @@ void FAccelByteEndgameModule::EnsurePlayerAddedToGame
 void FAccelByteEndgameModule::GetOrCreatePlayer
 (
 	FString uniquePlayerId, 
-	FGuid gameId, 
 	endgame::HandlerPtr getOrCreatePlayerHandler
 ) const
 {
 	UE_LOG(LogTemp, Display, TEXT("uniquePlayerId %s"), *uniquePlayerId);
 
-	GetPlayerByUniqueId(uniquePlayerId, gameId, CreateHandler([uniquePlayerId, getOrCreatePlayerHandler,this](HandlerResult const& existingPlayerResult)
+	GetPlayerByUniqueId(uniquePlayerId, m_gameId, CreateHandler([uniquePlayerId, getOrCreatePlayerHandler,this](HandlerResult const& existingPlayerResult)
 	{
 		auto ensurePlayerAddedToGame = [&,this](Player player)
 		{
@@ -497,7 +511,7 @@ void FAccelByteEndgameModule::GetOrCreatePlayer
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-void FAccelByteEndgameModule::TestAwardToken(FString userName, FGuid itemId)
+endgame::HandlerPtr FAccelByteEndgameModule::AwardToken(FString userName, FGuid itemId)
 {
 	auto awardItemHandler = CreateHandler([](HandlerResult const& result)
 	{
@@ -511,7 +525,7 @@ void FAccelByteEndgameModule::TestAwardToken(FString userName, FGuid itemId)
 		}
 	});
 
-	m_testHandler = CreateHandler([awardItemHandler, itemId, this](HandlerResult const& result)
+	auto getPlayerHandler = CreateHandler([awardItemHandler, itemId, this](HandlerResult const& result)
 	{
 		UE_LOG(LogTemp, Display, TEXT("GetPlayerByUniqueId matt Handler hit"));
 
@@ -528,9 +542,11 @@ void FAccelByteEndgameModule::TestAwardToken(FString userName, FGuid itemId)
 		}
 	});
 
-	m_testHandler->AddDependentHandler(awardItemHandler);
+	getPlayerHandler->AddDependentHandler(awardItemHandler);
 
-	FAccelByteEndgameModule::GetOrCreatePlayer(userName, m_gameId, m_testHandler);
+	FAccelByteEndgameModule::GetOrCreatePlayer(userName, getPlayerHandler);
+
+	return getPlayerHandler;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
