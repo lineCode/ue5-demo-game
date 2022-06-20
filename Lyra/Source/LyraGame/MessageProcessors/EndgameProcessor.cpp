@@ -33,7 +33,7 @@ void UEndgameProcessor::InitEndgamePlayer()
 
 	auto const* userInfo = UserSubsystem->GetUserInfoForLocalPlayerIndex(0);
 
-	if( userInfo->InitializationState == ECommonUserInitializationState::LoggedInOnline )
+	if( userInfo->InitializationState == ECommonUserInitializationState::LoggedInOnline || userInfo->InitializationState == ECommonUserInitializationState::LoggedInLocalOnly )
 	{
 		if( auto* endgameModule = FModuleManager::GetModulePtr<FAccelByteEndgameModule>("AccelByteEndgame") )
 		{
@@ -43,12 +43,50 @@ void UEndgameProcessor::InitEndgamePlayer()
 			{
 				UE_LOG(LogTemp, Display, TEXT("Endgame Player Created"));
 
-				m_loggedInPlayerUniqueId = nickname;
+				if (result.error == endgame::ErrorType::None && result.responseObjects.Num() == 1)
+				{
+					endgame::Player player = *static_cast<endgame::Player*>(result.responseObjects[0].Get());
+					m_playerId = player.m_objectId;
+					m_loggedInPlayerUniqueId = nickname;
+					GetPlayerWalletAddress();
+				}
 			});
 
 			endgameModule->GetOrCreatePlayer(nickname, getPlayerHandler);
 
 			m_endgameHandlers.Add(getPlayerHandler);
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void UEndgameProcessor::GetPlayerWalletAddress()
+{
+	UGameInstance const* GameInstance = UGameplayStatics::GetGameInstance(this);
+	UCommonUserSubsystem const* UserSubsystem = GameInstance->GetSubsystem<UCommonUserSubsystem>();
+
+	auto const* userInfo = UserSubsystem->GetUserInfoForLocalPlayerIndex(0);
+
+	if (userInfo->InitializationState == ECommonUserInitializationState::LoggedInOnline || userInfo->InitializationState == ECommonUserInitializationState::LoggedInLocalOnly)
+	{
+		if (auto* endgameModule = FModuleManager::GetModulePtr<FAccelByteEndgameModule>("AccelByteEndgame"))
+		{
+			auto getWalletAddressHandler = endgame::CreateHandler([this](endgame::HandlerResult const& result)
+			{
+				UE_LOG(LogTemp, Display, TEXT("Endgame Player Created"));
+
+				if (result.error == endgame::ErrorType::None && result.responseObjects.Num() == 1)
+				{
+					endgame::Account account = *static_cast<endgame::Account*>(result.responseObjects[0].Get());
+					m_walletAddress = account.m_address;
+				}
+
+			});
+
+			endgameModule->GetPlayerWalletAddress(m_playerId, FGuid("ed50aa96-6afd-486e-b248-413339e81bd2"), getWalletAddressHandler);
+
+			m_endgameHandlers.Add(getWalletAddressHandler);
 		}
 	}
 }

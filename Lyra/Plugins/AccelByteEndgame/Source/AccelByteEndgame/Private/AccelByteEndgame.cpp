@@ -60,6 +60,34 @@ namespace
 
 		return players;
 	}
+
+	///////////////////////////////////////////////////////////////////////////////
+
+	TArray<TSharedPtr<EndGameObject>> ConvertBodyToAccounts(FHttpResponsePtr response)
+	{
+		TSharedPtr<FJsonObject> responseObj;
+		TSharedRef<TJsonReader<>> reader = TJsonReaderFactory<>::Create(response->GetContentAsString());
+		TArray< TSharedPtr<FJsonValue> > jsonArray;
+		bool successful = FJsonSerializer::Deserialize(reader, jsonArray);
+
+		int code = response->GetResponseCode();
+
+		TArray<TSharedPtr<EndGameObject>> accounts;
+
+		for (auto i : jsonArray)
+		{
+			Account* accountPtr = new Account();
+
+			FGuid::Parse(i->AsObject()->GetStringField("account_id"), accountPtr->m_objectId);
+			FGuid::Parse(i->AsObject()->GetStringField("wallet_id"), accountPtr->m_walletId);
+			FGuid::Parse(i->AsObject()->GetStringField("network_id"), accountPtr->m_networkId);
+			accountPtr->m_address = i->AsObject()->GetStringField("address");
+
+			accounts.Add(EndGameObjectPtr(accountPtr));
+		}
+
+		return accounts;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -330,10 +358,38 @@ void FAccelByteEndgameModule::AddPlayerToGame
 
 		if (handler->alive)
 		{
+			resultInfo.responseObjects = ConvertBodyToPlayer(response);
 			handler->callback(resultInfo);
 		}
 	});
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+void FAccelByteEndgameModule::GetPlayerWalletAddress
+(
+	FGuid playerId,
+	FGuid networkId,
+	HandlerPtr handler
+) const
+{
+	TMap<FString, FString> bodyParams;
+	TMap<FString, FString> queryParams;
+
+	FString path = FString("v1/players/") + playerId.ToString(EGuidFormats::DigitsWithHyphensLower) + "/accounts?network_id=" + networkId.ToString(EGuidFormats::DigitsWithHyphensLower);
+
+	handler->request = CreateEndgameRequest(path, "GET", queryParams, bodyParams, [handler, this](FHttpRequestPtr request, FHttpResponsePtr response, bool bConnectedSuccessfully)
+	{
+		HandlerResult resultInfo = GetCommonResultInfo(response, bConnectedSuccessfully);
+
+		if (handler->alive)
+		{
+			resultInfo.responseObjects = ConvertBodyToAccounts(response);
+			handler->callback(resultInfo);
+		}
+	});
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -471,6 +527,7 @@ void FAccelByteEndgameModule::GetOrCreatePlayer
 			getOrCreatePlayerHandler->AddDependentHandler(ensurePlayerAddedToGameHandler);
 
 			EnsurePlayerAddedToGame(player, m_gameId, uniquePlayerId, ensurePlayerAddedToGameHandler );
+
 			return;
 		};
 

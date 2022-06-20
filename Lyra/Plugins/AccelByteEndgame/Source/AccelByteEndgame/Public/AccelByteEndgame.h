@@ -29,6 +29,14 @@ namespace endgame {
         FString m_uniqueId;
     };
 
+    struct Account : public EndGameObject
+    {
+    public:
+        FGuid m_networkId;
+        FGuid m_walletId;
+        FString m_address;
+    };
+
     typedef TSharedPtr<EndGameObject> EndGameObjectPtr;
 
     struct HandlerResult
@@ -82,6 +90,7 @@ public:
     void GetOrCreatePlayer(FString uniquePlayerId, endgame::HandlerPtr getOrCreatePlayerHandler) const;
     void GetPlayerInGame(FGuid playerId, FGuid gameId, endgame::HandlerPtr handler) const;
     void GetPlayerByUniqueId(FString uniquePlayerId, FGuid gameId, endgame::HandlerPtr handler) const;
+    void GetPlayerWalletAddress(FGuid playerId, FGuid networkId, endgame::HandlerPtr handler) const;
     void EnsurePlayerAddedToGame(endgame::Player player, FGuid gameId, FString uniquePlayerId, endgame::HandlerPtr ensurePlayerInGameHandler) const;
     void AwardPlayerItem(FGuid const& playerId, FGuid const& itemId, uint32 amount, endgame::HandlerPtr result) const;
     void AddPlayerToGame(FGuid playerId, FGuid gameId, FString playerGameDataJson, endgame::HandlerPtr handler) const;
