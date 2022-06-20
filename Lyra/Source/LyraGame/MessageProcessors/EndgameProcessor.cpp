@@ -95,24 +95,32 @@ void UEndgameProcessor::GetPlayerWalletAddress()
 
 void UEndgameProcessor::OnEliminationMessage
 (
-	FGameplayTag Channel, 
+	FGameplayTag Channel,
 	const FLyraVerbMessage& Payload
 )
 {
 #if !UE_EDITOR
-	if( Payload.Instigator != Payload.Target )
+	if (Payload.Instigator != Payload.Target)
 	{
-		if( ALyraPlayerState* instigator = Cast<ALyraPlayerState>(Payload.Instigator) )
+		if (ALyraPlayerState* instigator = Cast<ALyraPlayerState>(Payload.Instigator))
 		{
-			if( instigator->GetPlayerConnectionType() == ELyraPlayerConnectionType::Player )
+			if (instigator->GetPlayerConnectionType() == ELyraPlayerConnectionType::Player)
 			{
-				if( !m_loggedInPlayerUniqueId.IsEmpty() && instigator->GetPlayerName() == m_loggedInPlayerUniqueId )
+				if (!m_loggedInPlayerUniqueId.IsEmpty() && instigator->GetPlayerName() == m_loggedInPlayerUniqueId)
 				{
-					if( auto* endgameModule = FModuleManager::GetModulePtr<FAccelByteEndgameModule>("AccelByteEndgame") )
+					if (auto* endgameModule = FModuleManager::GetModulePtr<FAccelByteEndgameModule>("AccelByteEndgame"))
 					{
-						endgame::HandlerPtr getPlayerHandler = endgameModule->AwardToken(m_loggedInPlayerUniqueId, FGuid("096ed1f8-bb04-4a4a-b660-0f4ae02d4cfd"));
+						auto awardTokenHandler = endgame::CreateHandler([this](endgame::HandlerResult const& result)
+						{
+							if (result.error == endgame::ErrorType::None)
+							{
+								UE_LOG(LogTemp, Display, TEXT("https://testnets.opensea.io/assets/mumbai/0x9c4698d03d6993dbb1bd51fe46d4ce9799f62ded/1"));
+							}
+						});
 
-						m_endgameHandlers.Add(getPlayerHandler);
+						endgameModule->AwardToken(m_loggedInPlayerUniqueId, FGuid("fe56684f-578a-4916-bfd7-a83336353822"), awardTokenHandler);
+
+						m_endgameHandlers.Add(awardTokenHandler);
 					}
 				}
 			}

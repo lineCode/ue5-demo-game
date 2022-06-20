@@ -568,20 +568,8 @@ void FAccelByteEndgameModule::GetOrCreatePlayer
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-endgame::HandlerPtr FAccelByteEndgameModule::AwardToken(FString userName, FGuid itemId)
+void FAccelByteEndgameModule::AwardToken(FString userName, FGuid itemId, endgame::HandlerPtr awardItemHandler)
 {
-	auto awardItemHandler = CreateHandler([](HandlerResult const& result)
-	{
-		UE_LOG(LogTemp, Display, TEXT("Awarded Item Handler Hit"));
-
-		if (result.responseObjects.Num() > 0)
-		{
-			Player* player = static_cast<Player*>(result.responseObjects[0].Get());
-
-			UE_LOG(LogTemp, Display, TEXT("PlayerId %s"), *player->m_objectId.ToString());
-		}
-	});
-
 	auto getPlayerHandler = CreateHandler([awardItemHandler, itemId, this](HandlerResult const& result)
 	{
 		UE_LOG(LogTemp, Display, TEXT("GetPlayerByUniqueId matt Handler hit"));
@@ -592,8 +580,6 @@ endgame::HandlerPtr FAccelByteEndgameModule::AwardToken(FString userName, FGuid 
 
 			if (players.Num() == 1)
 			{
-				UE_LOG(LogTemp, Display, TEXT("PlayerId %s"), *players[0]->m_objectId.ToString());
-
 				FAccelByteEndgameModule::AwardPlayerItem(players[0]->m_objectId, itemId, 1, awardItemHandler);
 			}
 		}
@@ -602,8 +588,6 @@ endgame::HandlerPtr FAccelByteEndgameModule::AwardToken(FString userName, FGuid 
 	getPlayerHandler->AddDependentHandler(awardItemHandler);
 
 	FAccelByteEndgameModule::GetOrCreatePlayer(userName, getPlayerHandler);
-
-	return getPlayerHandler;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

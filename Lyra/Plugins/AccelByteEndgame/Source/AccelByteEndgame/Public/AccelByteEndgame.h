@@ -95,8 +95,8 @@ public:
     void AwardPlayerItem(FGuid const& playerId, FGuid const& itemId, uint32 amount, endgame::HandlerPtr result) const;
     void AddPlayerToGame(FGuid playerId, FGuid gameId, FString playerGameDataJson, endgame::HandlerPtr handler) const;
     void CreateNewPlayer(FString playerData, endgame::HandlerPtr handler) const;
+    void AwardToken(FString userName, FGuid itemId, endgame::HandlerPtr awardItemHandler);
 
-    endgame::HandlerPtr AwardToken(FString userName, FGuid itemId);
 private:
 
     void OnResponseReceived(FHttpRequestPtr request, FHttpResponsePtr response, bool bConnectedSuccessfully);
