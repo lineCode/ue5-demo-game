@@ -82,6 +82,7 @@ void UEndgameProcessor::InitEndgamePlayer()
 
 void UEndgameProcessor::GetPlayerWalletAddress()
 {
+#if !UE_EDITOR
 	UGameInstance const* GameInstance = UGameplayStatics::GetGameInstance(this);
 	UCommonUserSubsystem const* UserSubsystem = GameInstance->GetSubsystem<UCommonUserSubsystem>();
 
@@ -108,6 +109,7 @@ void UEndgameProcessor::GetPlayerWalletAddress()
 			m_endgameHandlers.Add(getWalletAddressHandler);
 		}
 	}
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////
