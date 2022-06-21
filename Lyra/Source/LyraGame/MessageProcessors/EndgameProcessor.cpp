@@ -47,6 +47,7 @@ void UEndgameProcessor::StartListening()
 
 void UEndgameProcessor::InitEndgamePlayer()
 {
+#if !UE_EDITOR
 	UGameInstance const* GameInstance = UGameplayStatics::GetGameInstance(this);
 	UCommonUserSubsystem const* UserSubsystem = GameInstance->GetSubsystem<UCommonUserSubsystem>();
 
@@ -76,6 +77,7 @@ void UEndgameProcessor::InitEndgamePlayer()
 			m_endgameHandlers.Add(getPlayerHandler);
 		}
 	}
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////
