@@ -34,6 +34,10 @@ $DSUploader_ClientID = $env:BB_DS_UPLOADER_CLIENT_ID
 
 $TurnServerSecret = $env:BB_TURN_SERVER_SECRET
 
+# Endgame credential
+$EndgameAPIKey = $env:BB_ENDGAME_APIKEY
+$EndgameGameID = $env:BB_ENDGAME_GAME_ID
+$EndgameNamespaceID = $env:BB_ENDGAME_NAMESPACE_ID
 
 # Steam credentials
 $SteamCDMPath = $env:BB_STEAM_CMD_PATH
