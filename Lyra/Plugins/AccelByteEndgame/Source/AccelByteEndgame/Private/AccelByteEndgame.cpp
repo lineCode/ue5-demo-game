@@ -94,7 +94,7 @@ namespace
 
 namespace endgame
 {
-	HandlerPtr CreateHandler(HandlerCallback callback)
+	ACCELBYTEENDGAME_API HandlerPtr CreateHandler(HandlerCallback callback)
 	{
 		HandlerPtr handler = HandlerPtr(new Handler());
 

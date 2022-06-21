@@ -76,10 +76,10 @@ namespace endgame {
 
     typedef TSharedPtr<Handler> HandlerPtr;
 
-    HandlerPtr CreateHandler(HandlerCallback callback);
+    ACCELBYTEENDGAME_API HandlerPtr CreateHandler(HandlerCallback callback);
 }
 
-class FAccelByteEndgameModule : public IModuleInterface
+class ACCELBYTEENDGAME_API FAccelByteEndgameModule : public IModuleInterface
 {
 public:
 
