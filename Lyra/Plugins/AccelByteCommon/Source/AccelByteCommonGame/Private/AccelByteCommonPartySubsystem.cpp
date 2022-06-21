@@ -269,7 +269,7 @@ void UAccelByteCommonPartySubsystem::SetOnPartyDataChangeDelegate(FPartyVoidDele
 
 		// Called when user joined party
 		PartyPtr->OnPartyMemberJoinedDelegates.AddWeakLambda(this,
-			[OnChange](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId, const FUniqueNetId& MemberId)
+			[OnChange, this](const FUniqueNetId& LocalUserId, const FOnlinePartyId& PartyId, const FUniqueNetId& MemberId)
 			{
 				UE_LOG(LogAccelByteCommonParty, Log, TEXT("Joined party"));
 				OnChange.ExecuteIfBound();
@@ -309,14 +309,14 @@ void UAccelByteCommonPartySubsystem::SetOnPartyDataChangeDelegate(FPartyVoidDele
 				UE_LOG(LogAccelByteCommonParty, Log, TEXT("Party member promoted"));
 				OnChange.ExecuteIfBound();
 			});
+
 	}
 }
 
 void UAccelByteCommonPartySubsystem::AcceptPartyInvite(FUniqueNetIdRepl SenderUniqueId, int32 LocalPlayerIndex)
 {
 	if (OSS)
-	{
-		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+	{const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
 		check(PartyPtr.IsValid());
 
 		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
@@ -389,6 +389,36 @@ bool UAccelByteCommonPartySubsystem::ShouldAutoCreateParty()
 	return bAutoCreateParty;
 }
 
+int32 UAccelByteCommonPartySubsystem::GetPartyMemberMax(const int32 LocalPlayerIndex)
+{
+	int32 MaxPartyMembers;
+
+	if (OSS)
+	{
+		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
+		check(PartyPtr.IsValid());
+
+		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
+		check(IdentityPtr);
+
+		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
+
+		const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
+
+		if (OnlineParty.IsValid())
+		{
+			MaxPartyMembers = OnlineParty->GetConfiguration()->MaxMembers;
+
+			if (MaxPartyMembers > 0)
+			{
+				return MaxPartyMembers;
+			}
+			GConfig->GetInt(TEXT("AccelByteSocialToolkit"), TEXT("MaxPartyMembers"), MaxPartyMembers, GEngineIni);
+		}
+	}
+	return MaxPartyMembers;
+}
+
 void UAccelByteCommonPartySubsystem::CreateParty(int32 LocalPlayerIndex, TDelegate<void()> OnComplete)
 {
 	if (OSS)
@@ -401,10 +431,17 @@ void UAccelByteCommonPartySubsystem::CreateParty(int32 LocalPlayerIndex, TDelega
 
 		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
 
+		FPartyConfiguration Config;
+		Config.bIsAcceptingMembers = true;
+
+		int32 MaxPartyMembers = 0;
+		GConfig->GetInt(TEXT("AccelByteSocialToolkit"), TEXT("MaxPartyMembers"), MaxPartyMembers, GEngineIni);
+		Config.MaxMembers = MaxPartyMembers;
+
 		PartyPtr->CreateParty(
 			*LocalUserId,
 			PartyTypeId,
-			FPartyConfiguration(),
+			Config,
 			FOnCreatePartyComplete::CreateWeakLambda(this,
 				[OnComplete](
 					const FUniqueNetId& LocalUserId,
@@ -416,13 +453,18 @@ void UAccelByteCommonPartySubsystem::CreateParty(int32 LocalPlayerIndex, TDelega
 	}
 }
 
-void UAccelByteCommonPartySubsystem::ShowReceivedInvitePopup(UObject* WorldContextObject, FABPartySubsystemPartyMember Sender, int32 LocalPlayerIndex)
+void UAccelByteCommonPartySubsystem::ShowReceivedInvitePopup(
+	const UObject* WorldContextObject,
+	FABPartySubsystemPartyMember Sender,
+	int32 LocalPlayerIndex)
 {
-	ULocalPlayer* TargetLocalPlayer =
+	const ULocalPlayer* TargetLocalPlayer =
 		WorldContextObject->GetWorld()->GetGameInstance()->GetPrimaryPlayerController(false)->GetLocalPlayer();
 
 	const FText Header = FText::FromString("Party Invitation");
-	const FText Body = FText::FromString(Sender.UserInfo.DisplayName + " sent party invitation" + LINE_TERMINATOR + "Would you like to accept?");
+	const FText Body =
+		FText::FromString(Sender.UserInfo.DisplayName +
+		" sent party invitation" + LINE_TERMINATOR + "Would you like to accept?");
 
 	UCommonGameDialogDescriptor* Descriptor = UCommonGameDialogDescriptor::CreateConfirmationYesNo(Header, Body);
 
@@ -430,12 +472,13 @@ void UAccelByteCommonPartySubsystem::ShowReceivedInvitePopup(UObject* WorldConte
 	{
 		if (UCommonMessagingSubsystem* Messaging = TargetLocalPlayer->GetSubsystem<UCommonMessagingSubsystem>())
 		{
-			FCommonMessagingResultDelegate ResultCallback = FCommonMessagingResultDelegate::CreateWeakLambda(this,
+			const FCommonMessagingResultDelegate ResultCallback = FCommonMessagingResultDelegate::CreateWeakLambda(this,
 				[Sender, this, LocalPlayerIndex](ECommonMessagingResult Result)
 				{
 					switch (Result)
 					{
 					case ECommonMessagingResult::Confirmed:
+						OnAcceptPartyInvitationDelegate.Broadcast();
 						AcceptPartyInvite(Sender.UserInfo.UserId, LocalPlayerIndex);
 						break;
 					default:
@@ -444,7 +487,6 @@ void UAccelByteCommonPartySubsystem::ShowReceivedInvitePopup(UObject* WorldConte
 					}
 				});
 			Messaging->ShowConfirmation(Descriptor, ResultCallback);
-			return;
 		}
 	}
 }
