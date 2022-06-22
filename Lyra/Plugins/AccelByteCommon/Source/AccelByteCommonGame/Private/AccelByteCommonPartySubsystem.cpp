@@ -409,6 +409,10 @@ int32 UAccelByteCommonPartySubsystem::GetPartyMemberMax(const int32 LocalPlayerI
 		{
 			MaxPartyMembers = OnlineParty->GetConfiguration()->MaxMembers;
 
+			/**
+			 * Due to an issue in AB OSS, the joining member will still have their configured max party member as 0
+			 * This is used as a workaround for that.
+			 */
 			if (MaxPartyMembers > 0)
 			{
 				return MaxPartyMembers;
