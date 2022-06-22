@@ -1,7 +1,7 @@
 // Copyright (c) 2018 AccelByte, inc. All rights reserved.
 
 
-#include "ULyraBlueprintUtilities.h"
+#include "LyraBlueprintUtilities.h"
 
 #include "PrimaryGameLayout.h"
 
