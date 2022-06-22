@@ -6,7 +6,6 @@
 #include "AccelByteCommonFriendSubsystem.h"
 #include "OnlinePartyInterfaceAccelByte.h"
 #include "SocialToolkit.h"
-#include "Messaging/CommonMessagingSubsystem.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "AccelByteCommonPartySubsystem.generated.h"
 
@@ -67,6 +66,7 @@ DECLARE_LOG_CATEGORY_CLASS(LogAccelByteCommonParty, Log, All);
 
 DECLARE_DYNAMIC_DELEGATE_OneParam(FPartyInviteReceived, FABPartySubsystemPartyMember, Inviter);
 DECLARE_DYNAMIC_DELEGATE(FPartyVoidDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPartyMultiCastDelegate);
 
 /**
  * 
@@ -153,7 +153,6 @@ public:
 	/**
 	 * Set delegate that will be called upon receiving party invitation
 	 *
-	 * @param OnInvitationReceived Delegate that will be executed
 	 * @param LocalPlayerIndex Local player index
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
@@ -196,13 +195,34 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
 	bool IsLocalUserLeader(int32 LocalPlayerIndex = 0);
 
+	/**
+	 * Return bAutoCreateParty value from DefaultEngine.ini
+	 *
+	 * @return value of bAutoCreateParty
+	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "ReturnValue"))
 	bool ShouldAutoCreateParty();
+
+	/**
+	 * Return Configured Max Party Member. If 0, return value configured from DefaultEngine.ini
+	 *
+	 * @param LocalPlayerIndex Local player index
+	 *
+	 * @return Configured max party member
+	 */
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
+	int32 GetPartyMemberMax(const int32 LocalPlayerIndex);
+
+	/**
+	 * Delegate that will be called upon accept party invitation success
+	 */
+	UPROPERTY(BlueprintAssignable)
+	FPartyMultiCastDelegate OnAcceptPartyInvitationDelegate;
 
 protected:
 	void CreateParty(int32 LocalPlayerIndex, TDelegate<void()> OnComplete = TDelegate<void()>());
 
-	void ShowReceivedInvitePopup(UObject* WorldContextObject, FABPartySubsystemPartyMember Sender, int32 LocalPlayerIndex);
+	void ShowReceivedInvitePopup(const UObject* WorldContextObject, FABPartySubsystemPartyMember Sender, int32 LocalPlayerIndex);
 
 	static FABPartySubsystemPartyMember BlueprintablePartyMember(const FOnlinePartyMemberConstRef PartyMember);
 
