@@ -391,7 +391,7 @@ bool UAccelByteCommonPartySubsystem::ShouldAutoCreateParty()
 
 int32 UAccelByteCommonPartySubsystem::GetPartyMemberMax(const int32 LocalPlayerIndex)
 {
-	int32 MaxPartyMembers;
+	int32 MaxPartyMembers = 0;
 
 	if (OSS)
 	{
