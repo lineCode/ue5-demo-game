@@ -60,6 +60,49 @@ namespace
 
 		return players;
 	}
+
+	///////////////////////////////////////////////////////////////////////////////
+
+	TArray<TSharedPtr<EndGameObject>> ConvertBodyToAccounts(FHttpResponsePtr response)
+	{
+		TSharedPtr<FJsonObject> responseObj;
+		TSharedRef<TJsonReader<>> reader = TJsonReaderFactory<>::Create(response->GetContentAsString());
+		TArray< TSharedPtr<FJsonValue> > jsonArray;
+		bool successful = FJsonSerializer::Deserialize(reader, jsonArray);
+
+		int code = response->GetResponseCode();
+
+		TArray<TSharedPtr<EndGameObject>> accounts;
+
+		for (auto i : jsonArray)
+		{
+			Account* accountPtr = new Account();
+
+			FGuid::Parse(i->AsObject()->GetStringField("account_id"), accountPtr->m_objectId);
+			FGuid::Parse(i->AsObject()->GetStringField("wallet_id"), accountPtr->m_walletId);
+			FGuid::Parse(i->AsObject()->GetStringField("network_id"), accountPtr->m_networkId);
+			accountPtr->m_address = i->AsObject()->GetStringField("address");
+
+			accounts.Add(EndGameObjectPtr(accountPtr));
+		}
+
+		return accounts;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+namespace endgame
+{
+	ACCELBYTEENDGAME_API HandlerPtr CreateHandler(HandlerCallback callback)
+	{
+		HandlerPtr handler = HandlerPtr(new Handler());
+
+		handler->callback = callback;
+		handler->id = FGuid::NewGuid();
+		handler->alive = true;
+		return handler;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -194,7 +237,7 @@ FHttpRequestRef FAccelByteEndgameModule::CreateEndgameRequest
 		}
 	}
 
-	path = "localhost:8080/" + path;
+	path = m_baseAddress + path;
 
 	UE_LOG(LogTemp, Display, TEXT("Endgame request %s"), *path);
 
@@ -315,10 +358,38 @@ void FAccelByteEndgameModule::AddPlayerToGame
 
 		if (handler->alive)
 		{
+			resultInfo.responseObjects = ConvertBodyToPlayer(response);
 			handler->callback(resultInfo);
 		}
 	});
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+void FAccelByteEndgameModule::GetPlayerWalletAddress
+(
+	FGuid playerId,
+	FGuid networkId,
+	HandlerPtr handler
+) const
+{
+	TMap<FString, FString> bodyParams;
+	TMap<FString, FString> queryParams;
+
+	FString path = FString("v1/players/") + playerId.ToString(EGuidFormats::DigitsWithHyphensLower) + "/accounts?network_id=" + networkId.ToString(EGuidFormats::DigitsWithHyphensLower);
+
+	handler->request = CreateEndgameRequest(path, "GET", queryParams, bodyParams, [handler, this](FHttpRequestPtr request, FHttpResponsePtr response, bool bConnectedSuccessfully)
+	{
+		HandlerResult resultInfo = GetCommonResultInfo(response, bConnectedSuccessfully);
+
+		if (handler->alive)
+		{
+			resultInfo.responseObjects = ConvertBodyToAccounts(response);
+			handler->callback(resultInfo);
+		}
+	});
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -436,13 +507,12 @@ void FAccelByteEndgameModule::EnsurePlayerAddedToGame
 void FAccelByteEndgameModule::GetOrCreatePlayer
 (
 	FString uniquePlayerId, 
-	FGuid gameId, 
 	endgame::HandlerPtr getOrCreatePlayerHandler
 ) const
 {
 	UE_LOG(LogTemp, Display, TEXT("uniquePlayerId %s"), *uniquePlayerId);
 
-	GetPlayerByUniqueId(uniquePlayerId, gameId, CreateHandler([uniquePlayerId, getOrCreatePlayerHandler,this](HandlerResult const& existingPlayerResult)
+	GetPlayerByUniqueId(uniquePlayerId, m_gameId, CreateHandler([uniquePlayerId, getOrCreatePlayerHandler,this](HandlerResult const& existingPlayerResult)
 	{
 		auto ensurePlayerAddedToGame = [&,this](Player player)
 		{
@@ -457,6 +527,7 @@ void FAccelByteEndgameModule::GetOrCreatePlayer
 			getOrCreatePlayerHandler->AddDependentHandler(ensurePlayerAddedToGameHandler);
 
 			EnsurePlayerAddedToGame(player, m_gameId, uniquePlayerId, ensurePlayerAddedToGameHandler );
+
 			return;
 		};
 
@@ -497,21 +568,9 @@ void FAccelByteEndgameModule::GetOrCreatePlayer
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-void FAccelByteEndgameModule::TestAwardToken(FString userName, FGuid itemId)
+void FAccelByteEndgameModule::AwardToken(FString userName, FGuid itemId, endgame::HandlerPtr awardItemHandler)
 {
-	auto awardItemHandler = CreateHandler([](HandlerResult const& result)
-	{
-		UE_LOG(LogTemp, Display, TEXT("Awarded Item Handler Hit"));
-
-		if (result.responseObjects.Num() > 0)
-		{
-			Player* player = static_cast<Player*>(result.responseObjects[0].Get());
-
-			UE_LOG(LogTemp, Display, TEXT("PlayerId %s"), *player->m_objectId.ToString());
-		}
-	});
-
-	m_testHandler = CreateHandler([awardItemHandler, itemId, this](HandlerResult const& result)
+	auto getPlayerHandler = CreateHandler([awardItemHandler, itemId, this](HandlerResult const& result)
 	{
 		UE_LOG(LogTemp, Display, TEXT("GetPlayerByUniqueId matt Handler hit"));
 
@@ -521,16 +580,14 @@ void FAccelByteEndgameModule::TestAwardToken(FString userName, FGuid itemId)
 
 			if (players.Num() == 1)
 			{
-				UE_LOG(LogTemp, Display, TEXT("PlayerId %s"), *players[0]->m_objectId.ToString());
-
 				FAccelByteEndgameModule::AwardPlayerItem(players[0]->m_objectId, itemId, 1, awardItemHandler);
 			}
 		}
 	});
 
-	m_testHandler->AddDependentHandler(awardItemHandler);
+	getPlayerHandler->AddDependentHandler(awardItemHandler);
 
-	FAccelByteEndgameModule::GetOrCreatePlayer(userName, m_gameId, m_testHandler);
+	FAccelByteEndgameModule::GetOrCreatePlayer(userName, getPlayerHandler);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

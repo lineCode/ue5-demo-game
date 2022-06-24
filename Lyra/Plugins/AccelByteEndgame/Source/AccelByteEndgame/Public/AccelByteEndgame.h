@@ -29,6 +29,14 @@ namespace endgame {
         FString m_uniqueId;
     };
 
+    struct Account : public EndGameObject
+    {
+    public:
+        FGuid m_networkId;
+        FGuid m_walletId;
+        FString m_address;
+    };
+
     typedef TSharedPtr<EndGameObject> EndGameObjectPtr;
 
     struct HandlerResult
@@ -68,18 +76,10 @@ namespace endgame {
 
     typedef TSharedPtr<Handler> HandlerPtr;
 
-    HandlerPtr CreateHandler(HandlerCallback callback)
-    {
-        HandlerPtr handler = HandlerPtr(new Handler());
-        
-        handler->callback = callback;
-        handler->id = FGuid::NewGuid();
-        handler->alive = true;
-        return handler;
-    }
+    ACCELBYTEENDGAME_API HandlerPtr CreateHandler(HandlerCallback callback);
 }
 
-class FAccelByteEndgameModule : public IModuleInterface
+class ACCELBYTEENDGAME_API FAccelByteEndgameModule : public IModuleInterface
 {
 public:
 
@@ -87,13 +87,15 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-    void GetOrCreatePlayer(FString uniquePlayerId, FGuid gameId, endgame::HandlerPtr getOrCreatePlayerHandler) const;
+    void GetOrCreatePlayer(FString uniquePlayerId, endgame::HandlerPtr getOrCreatePlayerHandler) const;
     void GetPlayerInGame(FGuid playerId, FGuid gameId, endgame::HandlerPtr handler) const;
     void GetPlayerByUniqueId(FString uniquePlayerId, FGuid gameId, endgame::HandlerPtr handler) const;
+    void GetPlayerWalletAddress(FGuid playerId, FGuid networkId, endgame::HandlerPtr handler) const;
     void EnsurePlayerAddedToGame(endgame::Player player, FGuid gameId, FString uniquePlayerId, endgame::HandlerPtr ensurePlayerInGameHandler) const;
     void AwardPlayerItem(FGuid const& playerId, FGuid const& itemId, uint32 amount, endgame::HandlerPtr result) const;
     void AddPlayerToGame(FGuid playerId, FGuid gameId, FString playerGameDataJson, endgame::HandlerPtr handler) const;
     void CreateNewPlayer(FString playerData, endgame::HandlerPtr handler) const;
+    void AwardToken(FString userName, FGuid itemId, endgame::HandlerPtr awardItemHandler);
 
 private:
 
@@ -120,9 +122,4 @@ private:
     FGuid m_gameId;
     FGuid m_namespaceId;
     FString m_apiKey;
-
-    /////////////// TEST //////////////////////////
-
-    void TestAwardToken(FString userName, FGuid itemId);
-    endgame::HandlerPtr m_testHandler;
 };

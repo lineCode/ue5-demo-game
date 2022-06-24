@@ -75,6 +75,7 @@ public class LyraGame : ModuleRules
 				"AudioModulation",
 				"AccelByteCommonServer",
 				"AccelByteCommonGame",
+				"AccelByteEndgame",
 				"AccelByteSocialToolkit",
 				"Party"
 			}
