@@ -17,7 +17,8 @@ class UEndgameProcessor : public UGameplayMessageProcessor
 
 public:
 	virtual void StartListening() override;
-
+	virtual void StopListening() override;
+	
 private:
 	void OnEliminationMessage(FGameplayTag Channel, const FLyraVerbMessage& Payload);
 	void InitEndgamePlayer();

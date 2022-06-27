@@ -45,6 +45,18 @@ void UEndgameProcessor::StartListening()
 
 ///////////////////////////////////////////////////////////////////////////////
 
+void UEndgameProcessor::StopListening()
+{
+	IConsoleManager::Get().UnregisterConsoleObject(TEXT("endgame.ShowKillTokenOnOpenSea"),false);
+	IConsoleManager::Get().UnregisterConsoleObject(TEXT("endgame.ShowWalletOnOpenSea"),false);
+	IConsoleManager::Get().UnregisterConsoleObject(TEXT("endgame.AwardKillToken"),false);
+	m_consoleCommandShowToken = nullptr;
+	m_consoleCommandShowWallet = nullptr;
+	m_consoleCommandAwardKillToken = nullptr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 void UEndgameProcessor::InitEndgamePlayer()
 {
 #if !UE_EDITOR
