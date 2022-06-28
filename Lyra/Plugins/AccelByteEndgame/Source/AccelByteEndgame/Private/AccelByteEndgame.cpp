@@ -23,12 +23,17 @@ namespace
 		TSharedPtr<FJsonObject> responseObj;
 		TSharedRef<TJsonReader<>> reader = TJsonReaderFactory<>::Create(response->GetContentAsString());
 		TSharedPtr<FJsonObject> jsonPlayer;
-		bool successful = FJsonSerializer::Deserialize(reader, jsonPlayer);
+		bool jsonResponseValid = FJsonSerializer::Deserialize(reader, jsonPlayer);
 
 		int code = response->GetResponseCode();
 
 		Player* playerPtr = new Player();;
-		FGuid::Parse(jsonPlayer->GetStringField("player_id"), playerPtr->m_objectId);
+		FString playerId;
+		
+		if (jsonResponseValid && jsonPlayer->TryGetStringField("player_id", playerId))
+		{
+			FGuid::Parse(playerId, playerPtr->m_objectId);
+		}
 
 		TArray<EndGameObjectPtr> players;
 		players.Add(EndGameObjectPtr(playerPtr));
@@ -43,19 +48,25 @@ namespace
 		TSharedPtr<FJsonObject> responseObj;
 		TSharedRef<TJsonReader<>> reader = TJsonReaderFactory<>::Create(response->GetContentAsString());
 		TArray< TSharedPtr<FJsonValue> > jsonArray;
-		bool successful = FJsonSerializer::Deserialize(reader, jsonArray);
-
+		bool jsonResponseValid = FJsonSerializer::Deserialize(reader, jsonArray);
 		int code = response->GetResponseCode();
 
 		TArray<TSharedPtr<EndGameObject>> players;
 
-		for (auto i : jsonArray)
+		if (jsonResponseValid)
 		{
-			Player* playerPtr = new Player();
+			for (auto i : jsonArray)
+			{
+				Player* playerPtr = new Player();
+				FString playerId;
 
-			FGuid::Parse(i->AsObject()->GetStringField("player_id"), playerPtr->m_objectId);
+				if (i->AsObject()->TryGetStringField("player_id", playerId))
+				{
+					FGuid::Parse(playerId, playerPtr->m_objectId);
+				}
 
-			players.Add(EndGameObjectPtr(playerPtr));
+				players.Add(EndGameObjectPtr(playerPtr));
+			}
 		}
 
 		return players;
@@ -68,22 +79,25 @@ namespace
 		TSharedPtr<FJsonObject> responseObj;
 		TSharedRef<TJsonReader<>> reader = TJsonReaderFactory<>::Create(response->GetContentAsString());
 		TArray< TSharedPtr<FJsonValue> > jsonArray;
-		bool successful = FJsonSerializer::Deserialize(reader, jsonArray);
-
-		int code = response->GetResponseCode();
+		bool jsonResponseValid = FJsonSerializer::Deserialize(reader, jsonArray);
 
 		TArray<TSharedPtr<EndGameObject>> accounts;
 
-		for (auto i : jsonArray)
+		if (jsonResponseValid)
 		{
-			Account* accountPtr = new Account();
+			int code = response->GetResponseCode();
 
-			FGuid::Parse(i->AsObject()->GetStringField("account_id"), accountPtr->m_objectId);
-			FGuid::Parse(i->AsObject()->GetStringField("wallet_id"), accountPtr->m_walletId);
-			FGuid::Parse(i->AsObject()->GetStringField("network_id"), accountPtr->m_networkId);
-			accountPtr->m_address = i->AsObject()->GetStringField("address");
+			for (auto i : jsonArray)
+			{
+				Account* accountPtr = new Account();
 
-			accounts.Add(EndGameObjectPtr(accountPtr));
+				FGuid::Parse(i->AsObject()->GetStringField("account_id"), accountPtr->m_objectId);
+				FGuid::Parse(i->AsObject()->GetStringField("wallet_id"), accountPtr->m_walletId);
+				FGuid::Parse(i->AsObject()->GetStringField("network_id"), accountPtr->m_networkId);
+				accountPtr->m_address = i->AsObject()->GetStringField("address");
+
+				accounts.Add(EndGameObjectPtr(accountPtr));
+			}
 		}
 
 		return accounts;
@@ -352,13 +366,19 @@ void FAccelByteEndgameModule::AddPlayerToGame
 
 	FString path = FString("v1/games/") + m_gameId.ToString(EGuidFormats::DigitsWithHyphensLower) + "/players";
 
-	handler->request = CreateEndgameRequest(path, "POST", queryParams, bodyParams, [handler, this](FHttpRequestPtr request, FHttpResponsePtr response, bool bConnectedSuccessfully)
+	handler->request = CreateEndgameRequest(path, "POST", queryParams, bodyParams, [handler, playerId, this](FHttpRequestPtr request, FHttpResponsePtr response, bool bConnectedSuccessfully)
 	{
 		HandlerResult resultInfo = GetCommonResultInfo(response, bConnectedSuccessfully);
 
 		if (handler->alive)
 		{
-			resultInfo.responseObjects = ConvertBodyToPlayer(response);
+			Player* playerPtr = new Player();;
+			playerPtr->m_objectId = playerId;
+			TArray<EndGameObjectPtr> players;
+
+			players.Add(EndGameObjectPtr(playerPtr));
+
+			resultInfo.responseObjects = players;
 			handler->callback(resultInfo);
 		}
 	});
