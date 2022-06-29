@@ -35,7 +35,8 @@ public class AccelByteCommonGame : ModuleRules
 				"Party",
 				"OnlineSubsystem",
 				"OnlineSubsystemAccelByte",
-				"CommonGame"
+				"CommonGame",
+				"HTTP"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
