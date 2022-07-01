@@ -6,7 +6,7 @@
 #include "Online.h"
 #include "OnlineSubsystemUtils.h"
 #include "SocialManager.h"
-#include "Blueprints/ABParty.h"
+#include "Core/AccelByteMultiRegistry.h"
 #include "Messaging/CommonGameDialog.h"
 #include "Party/SocialParty.h"
 
