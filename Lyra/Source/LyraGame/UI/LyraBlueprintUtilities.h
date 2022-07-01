@@ -31,4 +31,10 @@ public:
 		APlayerController* InOwningPlayer,
 		FGameplayTag InLayerName,
 		TSoftClassPtr<UCommonActivatableWidget> InWidgetClass);
+
+	UFUNCTION(BlueprintCallable)
+	static void PopContentOnTopOnLayer(
+		APlayerController* InOwningPlayer,
+		FGameplayTag InLayerName,
+		TSoftClassPtr<UCommonActivatableWidget> InWidgetClass);
 };

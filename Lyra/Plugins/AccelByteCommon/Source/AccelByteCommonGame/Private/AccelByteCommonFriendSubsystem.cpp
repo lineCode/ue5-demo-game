@@ -7,10 +7,9 @@
 
 #include "CommonUserSubsystem.h"
 #include "OnlineSubsystem.h"
+#include "OnlineSubsystemAccelByteTypes.h"
 #include "OnlineSubsystemUtils.h"
-#include "SocialManager.h"
 #include "SocialToolkit.h"
-#include "Party/PartyMember.h"
 #include "Party/SocialParty.h"
 
 void UAccelByteCommonFriendSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -48,8 +47,11 @@ void UAccelByteCommonFriendSubsystem::GetLocalUserDisplayNameAndPlatform(FString
 		const IOnlineIdentityPtr IdentityPtr = SocialToolkit->GetSocialOss(ESocialSubsystem::Primary)->GetIdentityInterface();
 		check(IdentityPtr);
 
-		DisplayName = SocialToolkit->GetLocalUser().GetDisplayName(ESocialSubsystem::Primary);
-		Platform = SocialToolkit->GetLocalUser().GetCurrentPlatform();
+		const TSharedRef<const FUniqueNetIdAccelByteUser> ABUser =
+			FUniqueNetIdAccelByteUser::Cast(*IdentityPtr->GetUniquePlayerId(LocalPlayer->GetLocalPlayerIndex()));
+
+		DisplayName = SocialToolkit->GetLocalUser().GetDisplayName();
+		Platform = ABUser->GetPlatformType() == "" ? "Pswd" : ABUser->GetPlatformType();
 	}
 }
 
@@ -172,11 +174,6 @@ TArray<FABFriendSubsystemOnlineFriend> UAccelByteCommonFriendSubsystem::Blueprin
 				SocialUser->GetCurrentPlatform().ToString(),
 				BlueprintableInviteStatusConversion(SocialUser->GetFriendInviteStatus(ESocialSubsystem::Primary)),
 				SocialUser->IsPlayingThisGame());
-
-			if (SocialUser->GetPartyMember(IOnlinePartySystem::GetPrimaryPartyTypeId()))
-			{
-				OnlineFriend.bIsInParty = true;
-			}
 
 			ABOnlineFriends.Add(OnlineFriend);
 		}
