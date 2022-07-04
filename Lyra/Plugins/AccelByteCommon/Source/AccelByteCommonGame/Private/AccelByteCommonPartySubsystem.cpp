@@ -114,8 +114,10 @@ FABPartySubsystemPartyMember UAccelByteCommonPartySubsystem::GetPartyMemberByAcc
 	return FABPartySubsystemPartyMember();
 }
 
-FString UAccelByteCommonPartySubsystem::GetLocalPlayerAccelByteIdString(int32 LocalPlayerIndex)
+FString UAccelByteCommonPartySubsystem::GetLocalPlayerAccelByteIdString(const int32 LocalPlayerIndex) const
 {
+	FString IdString = "";
+
 	if (OSS)
 	{
 		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
@@ -127,12 +129,14 @@ FString UAccelByteCommonPartySubsystem::GetLocalPlayerAccelByteIdString(int32 Lo
 		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
 		const TSharedRef<const FUniqueNetIdAccelByteUser> ABUser = FUniqueNetIdAccelByteUser::Cast(*LocalUserId);
 
-		return ABUser->GetAccelByteId();
+		IdString = ABUser->GetAccelByteId();
 	}
-	return "";
+
+	return IdString;
 }
 
-FUniqueNetIdRepl UAccelByteCommonPartySubsystem::GetPartyLeaderIdIfPartyExist(bool& bIsPartyExist, const int32 LocalPlayerIndex)
+FUniqueNetIdRepl UAccelByteCommonPartySubsystem::GetPartyLeaderIdIfPartyExist(
+	bool& bIsPartyExist, const int32 LocalPlayerIndex)
 {
 	if (OSS)
 	{
@@ -625,9 +629,6 @@ void UAccelByteCommonPartySubsystem::ChangeLocalPlayerTeamToNextTeam(int32 Local
 {
 	if (OSS)
 	{
-		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
-		check(PartyPtr.IsValid());
-
 		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
 		check(IdentityPtr);
 
@@ -675,9 +676,6 @@ void UAccelByteCommonPartySubsystem::ChangeLocalPlayerTeamToPreviousTeam(int32 L
 {
 	if (OSS)
 	{
-		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
-		check(PartyPtr.IsValid());
-
 		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
 		check(IdentityPtr);
 
@@ -778,8 +776,13 @@ void UAccelByteCommonPartySubsystem::QueryPartyData(int32 LocalPlayerIndex,
 			 * that is NOT setting the value.
 			 * This is used as a workaround for now.
 			 */
-			FMultiRegistry::GetApiClient(ABUser->GetAccelByteId())->Lobby.GetPartyData(
-				OnlineParty->PartyId->ToString(),
+
+			const FString ABUserId = ABUser->GetAccelByteId();
+			const FString PartyId = OnlineParty->PartyId->ToString();
+			const FApiClientPtr ApiClient = FMultiRegistry::GetApiClient(ABUserId);
+
+			ApiClient->Lobby.GetPartyData(
+				PartyId,
 				THandler<FAccelByteModelsPartyData>::CreateWeakLambda(this,
 					[OnDone, this](const FAccelByteModelsPartyData& Response)
 					{

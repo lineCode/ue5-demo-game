@@ -153,7 +153,7 @@ public:
 	 * @return Local Player Unique Id String
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
-	FString GetLocalPlayerAccelByteIdString(int32 LocalPlayerIndex = 0);
+	FString GetLocalPlayerAccelByteIdString(const int32 LocalPlayerIndex = 0) const;
 
 	/**
 	 * Get Party Leader Unique Id
