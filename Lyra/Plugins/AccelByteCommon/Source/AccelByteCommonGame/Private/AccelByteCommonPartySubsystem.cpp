@@ -595,46 +595,39 @@ FString UAccelByteCommonPartySubsystem::SetPartyDataArrayOfString(int32 LocalPla
 	return ArrayValuesInString;
 }
 
-FString UAccelByteCommonPartySubsystem::GetLocalPlayerTeam(int32 LocalPlayerIndex)
+FString UAccelByteCommonPartySubsystem::GetLocalPlayerTeam(int32 LocalPlayerIndex) const
 {
+	FString Team = "";
+
 	if (OSS)
 	{
 		const IOnlinePartyPtr PartyPtr = OSS->GetPartyInterface();
 		check(PartyPtr.IsValid());
 
-		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
-		check(IdentityPtr);
-
-		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
-		const TSharedRef<const FUniqueNetIdAccelByteUser> ABUser = FUniqueNetIdAccelByteUser::Cast(*LocalUserId);
-		const FString LocalAccelByteIdString = ABUser->GetAccelByteId();
+		const FString LocalAccelByteIdString = GetLocalPlayerAccelByteIdString(LocalPlayerIndex);
 
 		if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Team1).Find(LocalAccelByteIdString) != -1)
 		{
-			return PartyAttrName_CustomSession_Team1;
+			Team = PartyAttrName_CustomSession_Team1;
 		}
-		if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Team2).Find(LocalAccelByteIdString) != -1)
+		else if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Team2).Find(LocalAccelByteIdString) != -1)
 		{
-			return PartyAttrName_CustomSession_Team2;
+			Team = PartyAttrName_CustomSession_Team2;
 		}
-		if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Observer).Find(LocalAccelByteIdString) != -1)
+		else if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Observer).Find(LocalAccelByteIdString) != -1)
 		{
-			return PartyAttrName_CustomSession_Observer;
+			Team = PartyAttrName_CustomSession_Observer;
 		}
 	}
-	return "";
+
+	return Team;
 }
 
 void UAccelByteCommonPartySubsystem::ChangeLocalPlayerTeamToNextTeam(int32 LocalPlayerIndex)
 {
 	if (OSS)
 	{
-		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
-		check(IdentityPtr);
-
-		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
-		const TSharedRef<const FUniqueNetIdAccelByteUser> ABUser = FUniqueNetIdAccelByteUser::Cast(*LocalUserId);
-		const FString LocalAccelByteIdString = ABUser->GetAccelByteId();
+		const FString LocalAccelByteIdString = GetLocalPlayerAccelByteIdString(LocalPlayerIndex);
 		const FString LocalUserTeam = GetLocalPlayerTeam(LocalPlayerIndex);
 
 		TMap<FString, FString> TempData;
@@ -676,12 +669,7 @@ void UAccelByteCommonPartySubsystem::ChangeLocalPlayerTeamToPreviousTeam(int32 L
 {
 	if (OSS)
 	{
-		const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
-		check(IdentityPtr);
-
-		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
-		const TSharedRef<const FUniqueNetIdAccelByteUser> ABUser = FUniqueNetIdAccelByteUser::Cast(*LocalUserId);
-		const FString LocalAccelByteIdString = ABUser->GetAccelByteId();
+		const FString LocalAccelByteIdString = GetLocalPlayerAccelByteIdString(LocalPlayerIndex);
 		const FString LocalUserTeam = GetLocalPlayerTeam(LocalPlayerIndex);
 
 		TMap<FString, FString> TempData;
@@ -736,7 +724,7 @@ FString UAccelByteCommonPartySubsystem::RemoveStringFromPartyDataArrayOfString(
 	return ArrayValuesInString;
 }
 
-FString UAccelByteCommonPartySubsystem::GetCachedPartyDataString(int32 LocalPlayerIndex, FString PartyAttrName)
+FString UAccelByteCommonPartySubsystem::GetCachedPartyDataString(int32 LocalPlayerIndex, FString PartyAttrName) const
 {
 	return CachedPartyData->GetStringField(PartyAttrName + "_s");
 }

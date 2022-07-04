@@ -195,7 +195,7 @@ public:
 	void PromoteAsLeaderIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& bIsPartyExist, const int32 LocalPlayerIndex = 0);
 
 	/**
-	 * Leave current party. Automatically create party if bAutoCreateParty is set to true
+	 * Leave current party. Automatically create party if bAutoCreateParty in DefaultEngine.ini is set to true
 	 *
 	 * @param bWasInParty Outputs true if user was in party, false otherwise
 	 * @param OnComplete Delegate that will be executed on request completion
@@ -206,7 +206,7 @@ public:
 	void LeavePartyIfInParty(bool& bWasInParty, const FPartyVoidDelegate& OnComplete, int32 LocalPlayerIndex = 0, int32 NewPartyMemberLimit = 2);
 
 	/**
-	 * Leave current party
+	 * Create party for local user
 	 *
 	 * @param bWasNotInParty Outputs true if user was NOT in party, false otherwise
 	 * @param OnComplete Delegate that will be executed on request completion
@@ -368,7 +368,7 @@ public:
 	 * @return Local player team
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
-	FString GetLocalPlayerTeam(int32 LocalPlayerIndex);
+	FString GetLocalPlayerTeam(int32 LocalPlayerIndex) const;
 
 	/**
 	 * Move the local player from one team to another
@@ -397,7 +397,7 @@ public:
 	 * @return party attribute value in string
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
-	FString GetCachedPartyDataString(int32 LocalPlayerIndex, FString PartyAttrName);
+	FString GetCachedPartyDataString(int32 LocalPlayerIndex, FString PartyAttrName) const;
 
 	/**
 	 * Get cached party data
