@@ -78,3 +78,41 @@ void UAsyncAction_ABFriendsSubsystemSearchUser::Activate()
 				}));
 	}
 }
+
+UAsyncAction_ABFriendsSubsystemGetFriendsList* UAsyncAction_ABFriendsSubsystemGetFriendsList::GetFriendsList(
+	UAccelByteCommonFriendSubsystem* Target, int32 LocalPlayerIndex)
+{
+	UAsyncAction_ABFriendsSubsystemGetFriendsList* Action =
+		NewObject<UAsyncAction_ABFriendsSubsystemGetFriendsList>();
+
+	if (Target)
+	{
+		Action->FriendSubsystem = Target;
+		Action->LocalPlayerIndex = LocalPlayerIndex;
+	}
+	else
+	{
+		Action->SetReadyToDestroy();
+	}
+
+	return Action;
+}
+
+void UAsyncAction_ABFriendsSubsystemGetFriendsList::Activate()
+{
+	Super::Activate();
+
+	if (FriendSubsystem)
+	{
+		FriendSubsystem->GetFriendsList(TDelegate<void(TArray<FABFriendSubsystemOnlineFriend>&)>::CreateWeakLambda(
+		this, [this](TArray<FABFriendSubsystemOnlineFriend>& Result)
+		{
+			const FABFriendSubsystemOnlineFriends ABOnlineFriends(Result);
+			OnComplete.Broadcast(ABOnlineFriends);
+		}), LocalPlayerIndex);
+	}
+	else
+	{
+		SetReadyToDestroy();
+	}
+}
