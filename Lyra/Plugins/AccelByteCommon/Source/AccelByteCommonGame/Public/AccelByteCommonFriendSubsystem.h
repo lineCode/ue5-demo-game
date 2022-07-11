@@ -131,12 +131,12 @@ public:
 	/**
 	 * Get Display Name and Logged In platform of local user from SocialToolkit
 	 *
-	 * @param DisplayName Display name output
-	 * @param Platform Logged in platform output
+	 * @param OutDisplayName Display name output
+	 * @param OutPlatform Logged in platform output
 	 * @param LocalPlayerIndex
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void GetLocalUserDisplayNameAndPlatform(FString& DisplayName, FString& Platform, const int32 LocalPlayerIndex = 0) const;
+	void GetLocalUserDisplayNameAndPlatform(FString& OutDisplayName, FString& OutPlatform, const int32 LocalPlayerIndex = 0) const;
 
 	/**
 	 * Send friend request to another user.

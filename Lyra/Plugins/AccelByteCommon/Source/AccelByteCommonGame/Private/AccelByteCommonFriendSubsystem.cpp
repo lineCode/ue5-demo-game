@@ -48,7 +48,7 @@ void UAccelByteCommonFriendSubsystem::GetFriendsList(
 }
 
 void UAccelByteCommonFriendSubsystem::GetLocalUserDisplayNameAndPlatform(
-	FString& DisplayName, FString& Platform, const int32 LocalPlayerIndex) const
+	FString& OutDisplayName, FString& OutPlatform, const int32 LocalPlayerIndex) const
 {
 	const IOnlineIdentityPtr IdentityPtr = OSS->GetIdentityInterface();
 	check(IdentityPtr);
@@ -56,8 +56,8 @@ void UAccelByteCommonFriendSubsystem::GetLocalUserDisplayNameAndPlatform(
 	const TSharedRef<const FUniqueNetIdAccelByteUser> ABUser =
 		FUniqueNetIdAccelByteUser::Cast(*IdentityPtr->GetUniquePlayerId(LocalPlayerIndex));
 
-	DisplayName = IdentityPtr->GetPlayerNickname(LocalPlayerIndex);
-	Platform = ABUser->GetPlatformType() == "" ? PlatformType_Password : ABUser->GetPlatformType();
+	OutDisplayName = IdentityPtr->GetPlayerNickname(LocalPlayerIndex);
+	OutPlatform = ABUser->GetPlatformType() == "" ? PlatformType_Password : ABUser->GetPlatformType();
 }
 
 void UAccelByteCommonFriendSubsystem::SendFriendRequest(FUniqueNetIdRepl TargetId, int32 LocalPlayerIndex)

@@ -125,14 +125,14 @@ public:
 	 * Get current party member list
 	 *
 	 * @param LocalPlayerIndex Local player index
-	 * @param ABPartyMembers Party member list output
-	 * @param PartyStatus Outputs NoParty if local player does not have party, Party Data Loading if async task not yet finished, PartyValid if everything is okay
+	 * @param OutABPartyMembers Party member list output
+	 * @param OutPartyStatus Outputs NoParty if local player does not have party, Party Data Loading if async task not yet finished, PartyValid if everything is okay
 	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandEnumAsExecs = "PartyStatus"))
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandEnumAsExecs = "OutPartyStatus"))
 	void GetPartyMember(
 		int32 LocalPlayerIndex,
-		TArray<FABPartySubsystemPartyMember>& ABPartyMembers,
-		EPartyStatus& PartyStatus);
+		TArray<FABPartySubsystemPartyMember>& OutABPartyMembers,
+		EPartyStatus& OutPartyStatus);
 
 	/**
 	 * Get party member object by Unique Net Id String
@@ -158,62 +158,62 @@ public:
 	/**
 	 * Get Party Leader Unique Id
 	 *
-	 * @param bIsPartyExist Outputs true if party exist, false otherwise
+	 * @param OutbIsPartyExist Outputs true if party exist, false otherwise
 	 * @param LocalPlayerIndex Local player index
 	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "bIsPartyExist"))
-	FUniqueNetIdRepl GetPartyLeaderIdIfPartyExist(bool& bIsPartyExist, int32 LocalPlayerIndex = 0);
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "OutbIsPartyExist"))
+	FUniqueNetIdRepl GetPartyLeaderIdIfPartyExist(bool& OutbIsPartyExist, int32 LocalPlayerIndex = 0);
 
 	/**
 	 * Invite other user to party
 	 *
 	 * @param TargetUniqueId Target Unique Id to be invited
-	 * @param bIsPartyExist Outputs true if party exist, false otherwise
+	 * @param OutbIsPartyExist Outputs true if party exist, false otherwise
 	 * @param LocalPlayerIndex Local player index
 	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "bIsPartyExist"))
-	void InviteToPartyIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& bIsPartyExist, const int32 LocalPlayerIndex = 0);
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "OutbIsPartyExist"))
+	void InviteToPartyIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& OutbIsPartyExist, const int32 LocalPlayerIndex = 0);
 
 	/**
 	 * Kick user from party
 	 *
 	 * @param TargetUniqueId Target Unique Id to be kicked
-	 * @param bIsPartyExist Outputs true if party exist, false otherwise
+	 * @param OutbIsPartyExist Outputs true if party exist, false otherwise
 	 * @param LocalPlayerIndex Local player index
 	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "bIsPartyExist"))
-	void KickFromPartyIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& bIsPartyExist, const int32 LocalPlayerIndex = 0);
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "OutbIsPartyExist"))
+	void KickFromPartyIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& OutbIsPartyExist, const int32 LocalPlayerIndex = 0);
 
 	/**
 	 * Promote user as Party Leader
 	 *
 	 * @param TargetUniqueId Target Unique Id to be promoted
-	 * @param bIsPartyExist Outputs true if party exist, false otherwise
+	 * @param OutbIsPartyExist Outputs true if party exist, false otherwise
 	 * @param LocalPlayerIndex Local player index
 	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "bIsPartyExist"))
-	void PromoteAsLeaderIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& bIsPartyExist, const int32 LocalPlayerIndex = 0);
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "OutbIsPartyExist"))
+	void PromoteAsLeaderIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& OutbIsPartyExist, const int32 LocalPlayerIndex = 0);
 
 	/**
 	 * Leave current party. Automatically create party if bAutoCreateParty in DefaultEngine.ini is set to true
 	 *
-	 * @param bWasInParty Outputs true if user was in party, false otherwise
+	 * @param OutbWasInParty Outputs true if user was in party, false otherwise
 	 * @param OnComplete Executes on completion
 	 * @param LocalPlayerIndex Local player index
 	 * @param NewPartyMemberLimit Party member limit for the new party that will be created
 	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "bWasInParty", AutoCreateRefTerm = "OnComplete"))
-	void LeavePartyIfInParty(bool& bWasInParty, const FPartyVoidDelegate& OnComplete, int32 LocalPlayerIndex = 0, int32 NewPartyMemberLimit = 2);
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "OutbWasInParty", AutoCreateRefTerm = "OnComplete"))
+	void LeavePartyIfInParty(bool& OutbWasInParty, const FPartyVoidDelegate& OnComplete, int32 LocalPlayerIndex = 0, int32 NewPartyMemberLimit = 2);
 
 	/**
 	 * Create party for local user
 	 *
-	 * @param bWasNotInParty Outputs true if user was NOT in party, false otherwise
+	 * @param OutbWasNotInParty Outputs true if user was NOT in party, false otherwise
 	 * @param LocalPlayerIndex Local player index
 	 * @param NewPartyMemberLimit Party member limit for the new party that will be created
 	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "bWasNotInParty"))
-	void CreatePartyIfNotExist(bool& bWasNotInParty, int32 LocalPlayerIndex = 0, int32 NewPartyMemberLimit = 2);
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party", meta = (ExpandBoolAsExecs = "OutbWasNotInParty"))
+	void CreatePartyIfNotExist(bool& OutbWasNotInParty, int32 LocalPlayerIndex = 0, int32 NewPartyMemberLimit = 2);
 
 	/**
 	 * Set delegate that will be called upon local player left party.

@@ -21,8 +21,8 @@ void UAccelByteCommonPartySubsystem::Initialize(FSubsystemCollectionBase& Collec
 
 void UAccelByteCommonPartySubsystem::GetPartyMember(
 	const int32 LocalPlayerIndex,
-	TArray<FABPartySubsystemPartyMember>& ABPartyMembers,
-	EPartyStatus& PartyStatus)
+	TArray<FABPartySubsystemPartyMember>& OutABPartyMembers,
+	EPartyStatus& OutPartyStatus)
 {
 	if (OSS)
 	{
@@ -49,25 +49,25 @@ void UAccelByteCommonPartySubsystem::GetPartyMember(
 
 				const FUniqueNetIdPtr LeaderUserId = OnlineParty->LeaderId;
 
-				ABPartyMembers =
+				OutABPartyMembers =
 					BlueprintablePartyMembers(
 						PartyMembers, LocalUserId.ToSharedRef(), LeaderUserId.ToSharedRef());
-				PartyStatus = EPartyStatus::PartyValid;
+				OutPartyStatus = EPartyStatus::PartyValid;
 			}
 			else if (
 				OnlineParty->State == EPartyState::CreatePending ||
 				OnlineParty->State == EPartyState::JoinPending)
 			{
-				PartyStatus = EPartyStatus::PartyDataLoading;
+				OutPartyStatus = EPartyStatus::PartyDataLoading;
 			}
 			else
 			{
-				PartyStatus = EPartyStatus::NoParty;
+				OutPartyStatus = EPartyStatus::NoParty;
 			}
 			return;
 		}
 		// no party for local user found
-		PartyStatus = EPartyStatus::NoParty;
+		OutPartyStatus = EPartyStatus::NoParty;
 	}
 }
 
@@ -136,7 +136,7 @@ FString UAccelByteCommonPartySubsystem::GetLocalPlayerAccelByteIdString(const in
 }
 
 FUniqueNetIdRepl UAccelByteCommonPartySubsystem::GetPartyLeaderIdIfPartyExist(
-	bool& bIsPartyExist, const int32 LocalPlayerIndex)
+	bool& OutbIsPartyExist, const int32 LocalPlayerIndex)
 {
 	if (OSS)
 	{
@@ -152,15 +152,15 @@ FUniqueNetIdRepl UAccelByteCommonPartySubsystem::GetPartyLeaderIdIfPartyExist(
 
 		if (OnlineParty.IsValid())
 		{
-			bIsPartyExist = true;
+			OutbIsPartyExist = true;
 			return OnlineParty->LeaderId;
 		}
 	}
-	bIsPartyExist = false;
+	OutbIsPartyExist = false;
 	return nullptr;
 }
 
-void UAccelByteCommonPartySubsystem::InviteToPartyIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& bIsPartyExist, const int32 LocalPlayerIndex)
+void UAccelByteCommonPartySubsystem::InviteToPartyIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& OutbIsPartyExist, const int32 LocalPlayerIndex)
 {
 	if (OSS)
 	{
@@ -177,14 +177,14 @@ void UAccelByteCommonPartySubsystem::InviteToPartyIfPartyExist(FUniqueNetIdRepl 
 		if (OnlineParty.IsValid())
 		{
 			PartyPtr->SendInvitation(*LocalUserId, *OnlineParty->PartyId,*TargetUniqueId.GetUniqueNetId());
-			bIsPartyExist = true;
+			OutbIsPartyExist = true;
 			return;
 		}
 	}
-	bIsPartyExist = false;
+	OutbIsPartyExist = false;
 }
 
-void UAccelByteCommonPartySubsystem::KickFromPartyIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& bIsPartyExist, const int32 LocalPlayerIndex)
+void UAccelByteCommonPartySubsystem::KickFromPartyIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& OutbIsPartyExist, const int32 LocalPlayerIndex)
 {
 	if (OSS)
 	{
@@ -201,14 +201,14 @@ void UAccelByteCommonPartySubsystem::KickFromPartyIfPartyExist(FUniqueNetIdRepl 
 		if (OnlineParty.IsValid())
 		{
 			PartyPtr->KickMember(*LocalUserId, *OnlineParty->PartyId,*TargetUniqueId.GetUniqueNetId());
-			bIsPartyExist = true;
+			OutbIsPartyExist = true;
 			return;
 		}
 	}
-	bIsPartyExist = false;
+	OutbIsPartyExist = false;
 }
 
-void UAccelByteCommonPartySubsystem::PromoteAsLeaderIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& bIsPartyExist, const int32 LocalPlayerIndex)
+void UAccelByteCommonPartySubsystem::PromoteAsLeaderIfPartyExist(FUniqueNetIdRepl TargetUniqueId, bool& OutbIsPartyExist, const int32 LocalPlayerIndex)
 {
 	if (OSS)
 	{
@@ -225,16 +225,16 @@ void UAccelByteCommonPartySubsystem::PromoteAsLeaderIfPartyExist(FUniqueNetIdRep
 		if (OnlineParty.IsValid())
 		{
 			PartyPtr->PromoteMember(*LocalUserId, *OnlineParty->PartyId,*TargetUniqueId.GetUniqueNetId());
-			bIsPartyExist = true;
+			OutbIsPartyExist = true;
 			return;
 		}
 	}
-	bIsPartyExist = false;
+	OutbIsPartyExist = false;
 }
 
-void UAccelByteCommonPartySubsystem::LeavePartyIfInParty(bool& bWasInParty, const FPartyVoidDelegate& OnComplete, int32 LocalPlayerIndex, int32 NewPartyMemberLimit)
+void UAccelByteCommonPartySubsystem::LeavePartyIfInParty(bool& OutbWasInParty, const FPartyVoidDelegate& OnComplete, int32 LocalPlayerIndex, int32 NewPartyMemberLimit)
 {
-	bWasInParty = false;
+	OutbWasInParty = false;
 
 	if (OSS)
 	{
@@ -269,12 +269,12 @@ void UAccelByteCommonPartySubsystem::LeavePartyIfInParty(bool& bWasInParty, cons
 						OnComplete.ExecuteIfBound();
 					}
 				}));
-			bWasInParty = true;
+			OutbWasInParty = true;
 		}
 	}
 }
 
-void UAccelByteCommonPartySubsystem::CreatePartyIfNotExist(bool& bWasNotInParty, int32 LocalPlayerIndex, int32 NewPartyMemberLimit)
+void UAccelByteCommonPartySubsystem::CreatePartyIfNotExist(bool& OutbWasNotInParty, int32 LocalPlayerIndex, int32 NewPartyMemberLimit)
 {
 	if (OSS)
 	{
@@ -291,11 +291,11 @@ void UAccelByteCommonPartySubsystem::CreatePartyIfNotExist(bool& bWasNotInParty,
 		if (!OnlineParty.IsValid())
 		{
 			CreateParty(LocalPlayerIndex, TDelegate<void()>(), NewPartyMemberLimit);
-			bWasNotInParty = true;
+			OutbWasNotInParty = true;
 			return;
 		}
 	}
-	bWasNotInParty = false;
+	OutbWasNotInParty = false;
 }
 
 void UAccelByteCommonPartySubsystem::SetPartyNotifDelegates(int32 LocalPlayerIndex)
@@ -427,7 +427,7 @@ void UAccelByteCommonPartySubsystem::RejectPartyInvite(FUniqueNetIdRepl SenderUn
 
 bool UAccelByteCommonPartySubsystem::IsLocalUserLeader(int32 LocalPlayerIndex) const
 {
-	bool IsLocalUserLeader = false;
+	bool bIsLocalUserLeader = false;
 
 	if (OSS)
 	{
@@ -450,11 +450,11 @@ bool UAccelByteCommonPartySubsystem::IsLocalUserLeader(int32 LocalPlayerIndex) c
 					FUniqueNetIdAccelByteUser::Cast(*OnlineParty->LeaderId);
 
 			// Native unique user id doesn't always work
-			IsLocalUserLeader = ABLocalUser->GetAccelByteId() == ABLeaderUser->GetAccelByteId();
+			bIsLocalUserLeader = ABLocalUser->GetAccelByteId() == ABLeaderUser->GetAccelByteId();
 		}
 	}
 
-	return IsLocalUserLeader;
+	return bIsLocalUserLeader;
 }
 
 bool UAccelByteCommonPartySubsystem::ShouldAutoCreateParty()
