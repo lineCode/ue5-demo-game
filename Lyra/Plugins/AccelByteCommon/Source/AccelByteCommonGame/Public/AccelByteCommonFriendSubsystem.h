@@ -5,9 +5,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "OnlineSubsystem.h"
 #include "OnlineSubsystemTypes.h"
 #include "UObject/NoExportTypes.h"
-#include "User/SocialUser.h"
 #include "AccelByteCommonFriendSubsystem.generated.h"
 
 #pragma region Blueprintable structs
@@ -102,8 +102,12 @@ public:
 
 #pragma endregion
 
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FFriendPresenceChange, bool, bIsPlayingThisGame, FString, LoggedInPlatform);
+DECLARE_LOG_CATEGORY_CLASS(LogAccelByteCommonFriend, Log, All);
+
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FFriendPresenceChangeDelegate, bool, bIsPlayingThisGame, FString, LoggedInPlatform);
 DECLARE_DYNAMIC_DELEGATE(FFriendVoidDelegate);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFriendMultiCastDelegate);
 
 /**
  * Friends related services Blueprint-able wrapper
@@ -119,93 +123,79 @@ public:
 	/**
 	 * Get Cached Friends, pending incoming and outgoing friend request list
 	 *
-	 * @param LocalPlayer Local player object
-	 * @param ABOnlineFriends Friends list output
-	 * @param bIsDoneQuery Whether the async task to get the data from endpoint have finished or not
+	 * @param LocalPlayerIndex Local player index
+	 * @param OnComplete Delegate that will be executed upon completion
 	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends", meta = (ExpandBoolAsExecs = "bIsDoneQuery"))
-	void GetFriendsList(
-		ULocalPlayer* LocalPlayer,
-		TArray<FABFriendSubsystemOnlineFriend>& ABOnlineFriends,
-		bool& bIsDoneQuery);
+	void GetFriendsList(const TDelegate<void(TArray<FABFriendSubsystemOnlineFriend>&)>& OnComplete, int32 LocalPlayerIndex = 0);
 
 	/**
 	 * Get Display Name and Logged In platform of local user from SocialToolkit
 	 *
-	 * @param DisplayName Display name output
-	 * @param Platform Logged in platform output
-	 * @param LocalPlayer Local player object
+	 * @param OutDisplayName Display name output
+	 * @param OutPlatform Logged in platform output
+	 * @param LocalPlayerIndex
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void GetLocalUserDisplayNameAndPlatform(FString& DisplayName, FString& Platform, ULocalPlayer* LocalPlayer);
+	void GetLocalUserDisplayNameAndPlatform(FString& OutDisplayName, FString& OutPlatform, const int32 LocalPlayerIndex = 0) const;
 
 	/**
 	 * Send friend request to another user.
 	 *
-	 * @param LocalPlayer Target local player object
-	 * @param DisplayName Exact DisplayName of the user to be requested
+	 * @param TargetId Unique ID of the user to be requested
+	 * @param LocalPlayerIndex
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void SendFriendRequest(ULocalPlayer* LocalPlayer, FString DisplayName);
+	void SendFriendRequest(FUniqueNetIdRepl TargetId, int32 LocalPlayerIndex = 0);
 
 	/**
 	 * Accept pending received friend request.
 	 *
-	 * @param LocalPlayer Local player object
 	 * @param SenderUniqueId Friend request sender Unique Id
+	 * @param LocalPlayerIndex Local player index
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void AcceptFriendRequest(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl SenderUniqueId);
+	void AcceptFriendRequest(FUniqueNetIdRepl SenderUniqueId, const int32 LocalPlayerIndex = 0);
 
 	/**
 	 * Reject pending received friend request.
 	 *
-	 * @param LocalPlayer Local player object
 	 * @param SenderUniqueId Friend request sender Unique Id
+	 * @param LocalPlayerIndex Local player index
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void RejectFriendRequest(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl SenderUniqueId);
+	void RejectFriendRequest(FUniqueNetIdRepl SenderUniqueId, const int32 LocalPlayerIndex = 0);
 
 	/**
-	 * Unfriend a user.
+	 * Unfriend or cancel sent friend request
 	 *
-	 * @param LocalPlayer Local player object
 	 * @param TargetUniqueId Target user Unique Id
+	 * @param LocalPlayerIndex Local player index
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void Unfriend(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId);
+	void DeleteFriend(FUniqueNetIdRepl TargetUniqueId, const int32 LocalPlayerIndex = 0);
 
 	/**
-	 * Cancel sent friend request
+	 * Convert FOnlineFriend to it's Blueprint's equivalent, FABFriendSubsystemOnlineFriend
 	 *
-	 * @param LocalPlayer Local player object
-	 * @param TargetUniqueId Target user Unique Id
+	 * @param OnlineFriends Array of FOnlineFriend to be converted
+	 *
+	 * @return Converted array
 	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void CancelSentFriendRequest(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId);
+	static TArray<FABFriendSubsystemOnlineFriend> BlueprintableSocialUserListConversion(TArray<TSharedRef<FOnlineFriend>> OnlineFriends);
 
 	/**
-	 * Set OnFriendListChange delegate. Will be called everytime Friends list changes.
-	 *
-	 * @param LocalPlayer Local player object
-	 * @param OnListChange Delegate that will be executed upon friends, incoming request, and outgoing request list change
+	 * Execute when friends, pending incoming, and pending outgoing list changed
 	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void OnFriendsListChange(ULocalPlayer* LocalPlayer, FFriendVoidDelegate OnListChange);
-
-	/**
-	 * Set OnFriendListChange delegate. Will be called everytime Friends list changes.
-	 *
-	 * @param LocalPlayer Local player object
-	 * @param TargetUniqueId Target user Unique Id
-	 * @param OnPresenceChange Delegate that will be executed upon friend's presence change
-	 */
-	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends")
-	void OnUserPresenceChange(ULocalPlayer* LocalPlayer, FUniqueNetIdRepl TargetUniqueId, FFriendPresenceChange OnPresenceChange);
-
-	static TArray<FABFriendSubsystemOnlineFriend> BlueprintableSocialUserListConversion(TArray<USocialUser*> SocialUsers);
+	UPROPERTY(BlueprintAssignable)
+	FFriendMultiCastDelegate OnFriendsListChange;
 
 private:
-
 	static EABFriendSubsystemInviteStatus BlueprintableInviteStatusConversion(EInviteStatus::Type InviteStatus);
+
+	void SetFriendsNotifDelegates();
+
+	IOnlineSubsystem* OSS;
+
+	static const inline FString PlatformType_Password = "PSWD";
+	static const inline FString FriendsListName = "";
 };

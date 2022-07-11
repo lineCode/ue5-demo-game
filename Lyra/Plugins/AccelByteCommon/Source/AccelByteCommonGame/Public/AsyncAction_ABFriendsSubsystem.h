@@ -8,7 +8,26 @@
 #include "Kismet/BlueprintAsyncActionBase.h"
 #include "AsyncAction_ABFriendsSubsystem.generated.h"
 
+#pragma region Blueprintable structs
+
+USTRUCT(BlueprintType)
+struct FABFriendSubsystemOnlineFriends
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FABFriendSubsystemOnlineFriend> Content;
+
+	FABFriendSubsystemOnlineFriends(){}
+
+	FABFriendSubsystemOnlineFriends(TArray<FABFriendSubsystemOnlineFriend> Content): Content(Content){}
+};
+
+#pragma endregion
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFoundSearchUser, FABFriendSubsystemOnlineUser, TargetUser);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGetFriendsListComplete, FABFriendSubsystemOnlineFriends, FriendsList);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnNotFoundSearchUser);
 
 /**
@@ -44,4 +63,31 @@ protected:
 	int32 LocalTargetUserNum;
 	FString DisplayName;
 	bool bHideSelf;
+};
+
+/**
+ *
+ */
+UCLASS()
+class ACCELBYTECOMMONGAME_API UAsyncAction_ABFriendsSubsystemGetFriendsList : public UBlueprintAsyncActionBase
+{
+	GENERATED_BODY()
+
+public:
+	/**
+	 * Attempt to retrieve cached friends list. If hasn't been cached yet, retrieve from endpoint
+	 *
+	 * @param Target AccelByte Common Party Subsystem object
+	 * @param LocalPlayerIndex Local player index
+	 */
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends", meta = (BlueprintInternalUseOnly = "true"))
+	static UAsyncAction_ABFriendsSubsystemGetFriendsList* GetFriendsList(UAccelByteCommonFriendSubsystem* Target, int32 LocalPlayerIndex);
+
+	UPROPERTY(BlueprintAssignable)
+	FOnGetFriendsListComplete OnComplete;
+
+protected:
+	virtual void Activate() override;
+	UAccelByteCommonFriendSubsystem* FriendSubsystem;
+	int32 LocalPlayerIndex;
 };
