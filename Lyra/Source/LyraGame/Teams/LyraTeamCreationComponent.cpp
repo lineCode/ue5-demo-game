@@ -6,6 +6,7 @@
 #include "GameModes/LyraExperienceManagerComponent.h"
 #include "LyraTeamPublicInfo.h"
 #include "LyraTeamPrivateInfo.h"
+#include "LyraTeamSubsystem.h"
 #include "GameFramework/PlayerState.h"
 #include "Player/LyraPlayerState.h"
 #include "GameFramework/PlayerController.h"
@@ -85,10 +86,41 @@ void ULyraTeamCreationComponent::ServerAssignPlayersToTeams()
 
 void ULyraTeamCreationComponent::ServerChooseTeamForPlayer(ALyraPlayerState* PS)
 {
+	// #START @AccelByte Implementation: Pre Assigned bots
+	if (PS->IsABot())
+	{
+		ALyraGameMode* LyraGameMode = GetGameMode<ALyraGameMode>();
+		FGenericTeamId TeamID;
+
+		if (LyraGameMode)
+		{
+			if (LyraGameMode->CurrentBotsNum_Team1 < LyraGameMode->PreAssignedBotsNum_Team1)
+			{
+				TeamID = IntegerToGenericTeamId(1);
+				PS->SetGenericTeamId(TeamID);
+				LyraGameMode->CurrentBotsNum_Team1++;
+			}
+			else
+			{
+				TeamID = IntegerToGenericTeamId(2);
+				PS->SetGenericTeamId(TeamID);
+			}
+		}
+
+		return;
+	}
+	// #END
 	if (PS->IsOnlyASpectator())
 	{
 		PS->SetGenericTeamId(FGenericTeamId::NoTeam);
 	}
+	// #START @AccelByte Implementation: Pre Assigned team
+	else if (PS->PreAssignedTeamId != 0)
+	{
+		const FGenericTeamId TeamID = IntegerToGenericTeamId(PS->PreAssignedTeamId);
+		PS->SetGenericTeamId(TeamID);
+	}
+	// #END
 	else
 	{
 		const FGenericTeamId TeamID = IntegerToGenericTeamId(GetLeastPopulatedTeamID());
