@@ -65,6 +65,11 @@ public:
 		{
 			Result.Category = *Category;
 		}
+		FString* IconUrl = InOffer.DynamicFields.Find(TEXT("IconUrl"));
+		if(IconUrl)
+		{
+			Result.IconUrl = *IconUrl;
+		}
 		
 		return Result;
 	}
@@ -104,10 +109,10 @@ struct FUserEntitlement
 	FString ItemId;
 	/** True if the entitlement is a consumable */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "AccelByte Subsystem | Commerce | Entitlement")
-	bool bIsConsumable;
+	bool bIsConsumable {false};
 	/** Number of uses still available for a consumable */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "AccelByte Subsystem | Commerce | Entitlement")
-	int32 RemainingCount;
+	int32 RemainingCount {0};
 	/** Current Status of the entitlement e.g. Active, Subscribe, Expire ... */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "AccelByte Subsystem | Commerce | Entitlement")
 	FString Status;
@@ -146,6 +151,14 @@ class ACCELBYTECOMMONGAME_API UAccelByteCommonCommerceSubsystem : public UGameIn
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 public:
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnQueryEntitlementsComplete);
+
+	UPROPERTY(BlueprintAssignable, Category = "AccelByte Subsystem | Commerce")
+	FOnQueryEntitlementsComplete OnQueryEntitlementsComplete;
+	
+	UFUNCTION(BlueprintCallable, Category = "AccelByte Subsystem | Commerce")
+	virtual void QueryEntitlements();
+	
 	/** Get User entitlements by Entitlement Id */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte Subsystem | Commerce")
 	virtual void GetUserEntitlements(TArray<FUserEntitlement>& OutEntitlements);
@@ -158,6 +171,11 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "AccelByte Subsystem | Commerce")
 	FORCEINLINE bool IsStartupTaskComplete() const { return StartupTaskCounter == 0; }
+	
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCheckoutStarted, EOnlineSubsystemType, SubsystemType, FString const&, OfferId);
+
+	UPROPERTY(BlueprintAssignable, Category = "AccelByte Subsystem | Commerce")
+	FOnCheckoutStarted OnCheckoutStarted;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnCheckoutSuccess, bool, bWasSuccess, FString const&, ErrMsg, FString const&, OfferId);
 
@@ -186,6 +204,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AccelByte Subsystem | Commerce")
 	virtual int32 GetBalance() const;
 
+	UFUNCTION(BlueprintCallable, Category = "AccelByte Subsystem | Commerce")
+	virtual void QueryBalance();
+
 protected:
 	void HandleOnGetWalletInfoByCurrencyCode(const FAccelByteModelsWalletInfo& Result);
 	void HandleOnQueryCategoriesCompleted(bool bWasSuccessful, const FString& ErrorText);
@@ -197,6 +218,7 @@ protected:
 	void HandleOnQueryEntitlementsComplete(bool bSuccess, const FUniqueNetId& UniqueNetId, const FString& Namespaces, const FString& Error);
 
 	void CacheImage(FPurchasingOfferDisplay& Purchasing);
+	void DecrementStartupTask();
 	
 	IOnlineSubsystem* PlatformSubsystem;
 	IOnlineSubsystem* DefaultSubsystem;

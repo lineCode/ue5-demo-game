@@ -6,13 +6,11 @@
 #include "JsonObjectConverter.h"
 
 FUserCaches FCommonCacheUtils::UserCaches = FUserCaches();
-FString FCommonCacheUtils::CacheDir = TEXT("");
 
 void FCommonCacheUtils::LoadUserCaches()
 {
 	UserCaches.Caches.Empty();
-	CacheDir = FPaths::ProjectSavedDir() / TEXT("Caches");
-	FString SavePath = CacheDir / TEXT("UserCaches.json");
+	FString SavePath = GetCacheDir() / TEXT("UserCaches.json");
 
 	FString CachesString;
 	if (!FFileHelper::LoadFileToString(CachesString, *SavePath)) return;
@@ -23,7 +21,7 @@ void FCommonCacheUtils::SaveUserCache(FUserCache UserCache)
 {
 	UserCaches.Caches.Add(UserCache);
 
-	FString SavePath = CacheDir / TEXT("UserCaches.json");
+	FString SavePath = GetCacheDir() / TEXT("UserCaches.json");
 	FString CachesString;
 	if (!FJsonObjectConverter::UStructToJsonObjectString(UserCaches, CachesString)) return;
 	FFileHelper::SaveStringToFile(CachesString, *SavePath);
@@ -38,32 +36,34 @@ FUserCache FCommonCacheUtils::GetUserCache(FString UserId)
 	return UserCaches.Caches[Index];
 }
 
-FCacheBrush FCommonCacheUtils::GetUserAvatarCache(FString UserId)
+FCacheBrush FCommonCacheUtils::GetImageCache(FString ImageId)
 {
 	TArray<uint8> ImageData;
-	FString AvatarPath = CacheDir / UserId + TEXT(".png");
-	FCacheBrush AvatarImage;
-	if (FFileHelper::LoadFileToArray(ImageData, *AvatarPath))
+	FString ImagePath = GetCacheDir() / ImageId + TEXT(".png");
+	FCacheBrush ImageSlate;
+	if (FFileHelper::LoadFileToArray(ImageData, *ImagePath))
 	{
-		AvatarImage = FCommonImageUtils::CreateBrush(TEXT("png"), FName(*AvatarPath), ImageData);
+		ImageSlate = FCommonImageUtils::CreateBrush(TEXT("png"), FName(*ImagePath), ImageData);
 	}
-	return AvatarImage;
+	else if(FFileHelper::LoadFileToArray(ImageData, *(FPaths::ProjectDir() / TEXT("Plugins/AccelByteCommon/Resources/Icon128.png"))))
+	{
+		// Load default image
+		ImageSlate = FCommonImageUtils::CreateBrush(TEXT("png"), FName(*ImagePath), ImageData);
+	}
+	return ImageSlate;
 }
 
-bool FCommonCacheUtils::SaveUserAvatarCache(const FString& Filename, const TArray<uint8>& Binary)
+bool FCommonCacheUtils::SaveImageCache(const FString& Filename, const TArray<uint8>& Binary)
 {
+	FString ImagePath = GetCacheDir() / Filename + TEXT(".png");
+	
 	if (Filename.IsEmpty() || Binary.Num() == 0) return false;
-	if (!FFileHelper::SaveArrayToFile(Binary, *Filename)) return false;
+	if (!FFileHelper::SaveArrayToFile(Binary, *ImagePath)) return false;
 	return true;
 }
 
-bool FCommonCacheUtils::IsUserCacheExist(FString UserId)
+bool FCommonCacheUtils::IsImageCacheExist(FString ImageId)
 {
-	int32 Index = UserCaches.Caches.IndexOfByPredicate([UserId](FUserCache UserCache)
-	{
-		return UserCache.UserId == UserId;
-	});
-	if (Index == INDEX_NONE) return false;
-	FString AvatarPath = CacheDir / UserId + TEXT(".png");
-	return IFileManager::Get().FileExists(*AvatarPath);
+	FString ImagePath = GetCacheDir() / ImageId + TEXT(".png");
+	return IFileManager::Get().FileExists(*ImagePath);
 }

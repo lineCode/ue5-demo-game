@@ -6,17 +6,17 @@
 
 TLruCache<FString, FCacheBrush> ImageCache(100);
 TMap<FString, TSharedPtr<TQueue<FOnImageReceived>>> ImageReceivedQueue;
-FCriticalSection ShooterImageUtilsMutex;
+FCriticalSection LyraImageUtilsMutex;
 
 void FCommonImageUtils::GetImage(const FString &Url, const FOnImageReceived& OnReceived, const FString& Filename)
 {
-	ShooterImageUtilsMutex.Lock();
+	LyraImageUtilsMutex.Lock();
 	auto Ptr = ImageCache.FindAndTouch(Url);
 
 	if (Ptr)
 	{
 		OnReceived.ExecuteIfBound(*Ptr);
-		ShooterImageUtilsMutex.Unlock();
+		LyraImageUtilsMutex.Unlock();
 	}
 	else
 	{
@@ -27,7 +27,7 @@ void FCommonImageUtils::GetImage(const FString &Url, const FOnImageReceived& OnR
 		}
 		bool QueueEmpty = (*QueuePtr)->IsEmpty();
 		(*QueuePtr)->Enqueue(OnReceived); // queue request for same url
-		ShooterImageUtilsMutex.Unlock();
+		LyraImageUtilsMutex.Unlock();
 
 		if (QueueEmpty)
 		{
@@ -65,18 +65,18 @@ void FCommonImageUtils::GetImage(const FString &Url, const FOnImageReceived& OnR
 
 						ImageBrush = MakeShareable(CreateBrush(FName(*ResourceName), ImageData, ImageFormat));
 						{
-							FScopeLock Lock(&ShooterImageUtilsMutex);
+							FScopeLock Lock(&LyraImageUtilsMutex);
 							ImageCache.Add(Request->GetURL(), ImageBrush);
 						}
 						if (!Filename.IsEmpty() && ImageBrush.IsValid())
 						{
-							FCommonCacheUtils::SaveUserAvatarCache(Filename, ImageData);
+							FCommonCacheUtils::SaveImageCache(Filename, ImageData);
 						}
 					}
 				}
 
 				{
-					FScopeLock Lock(&ShooterImageUtilsMutex);
+					FScopeLock Lock(&LyraImageUtilsMutex);
 					auto QueueRef = ImageReceivedQueue.FindRef(Request->GetURL());
 					if (QueueRef.IsValid())
 					{

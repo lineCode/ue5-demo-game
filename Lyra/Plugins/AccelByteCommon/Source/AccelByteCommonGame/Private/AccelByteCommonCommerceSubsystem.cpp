@@ -4,7 +4,6 @@
 #include "AccelByteCommonCommerceSubsystem.h"
 
 #include "IImageWrapper.h"
-#include "IImageWrapperModule.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemAccelByte.h"
 #include "OnlineIdentityInterfaceAccelByte.h"
@@ -25,6 +24,11 @@ void UAccelByteCommonCommerceSubsystem::Initialize(FSubsystemCollectionBase& Col
 	}
 	
 	GenericErrorHandler = FErrorHandler::CreateWeakLambda(this, [](int32 Code, FString const& ErrMsg){});
+}
+
+void UAccelByteCommonCommerceSubsystem::QueryEntitlements()
+{
+	DefaultSubsystem->GetEntitlementsInterface()->QueryEntitlements(*DefaultSubsystem->GetIdentityInterface()->GetUniquePlayerId(0), TEXT(""));
 }
 
 void UAccelByteCommonCommerceSubsystem::GetUserEntitlements(TArray<FUserEntitlement>& OutEntitlements)
@@ -48,6 +52,8 @@ void UAccelByteCommonCommerceSubsystem::CheckoutOrder(EOnlineSubsystemType Subsy
 		//Debug Error here
 		return;
 	}
+	
+	OnCheckoutStarted.Broadcast(SubsystemType, Offer.Id);
 	
 	FPurchaseCheckoutRequest Request;
 	FPurchaseCheckoutRequest::FPurchaseOfferEntry Entry {
@@ -89,16 +95,21 @@ int32 UAccelByteCommonCommerceSubsystem::GetBalance() const
 	return Balance;
 }
 
+void UAccelByteCommonCommerceSubsystem::QueryBalance()
+{
+	// TODO: Replace this with OSS interface
+	ApiClientPtr = StaticCastSharedPtr<FOnlineIdentityAccelByte>(DefaultSubsystem->GetIdentityInterface())->GetApiClient(0);
+	ApiClientPtr->Wallet.GetWalletInfoByCurrencyCode(TEXT("JC"),
+		THandler<FAccelByteModelsWalletInfo>::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnGetWalletInfoByCurrencyCode),
+		GenericErrorHandler);
+}
+
 void UAccelByteCommonCommerceSubsystem::HandleOnGetWalletInfoByCurrencyCode(const FAccelByteModelsWalletInfo& Result)
 {
 	Balance = Result.Balance;
 	OnBalanceUpdated.Broadcast(Result);
 	
-	StartupTaskCounter-= 1;
-	if(StartupTaskCounter == 0)
-	{
-		OnStartupComplete.Broadcast();
-	}
+	DecrementStartupTask();
 }
 
 void UAccelByteCommonCommerceSubsystem::HandleOnQueryCategoriesCompleted(bool bWasSuccessful, const FString& ErrorText)
@@ -109,11 +120,7 @@ void UAccelByteCommonCommerceSubsystem::HandleOnQueryCategoriesCompleted(bool bW
 	{
 		AllCategories.Emplace(Category.Id);
 	}
-	StartupTaskCounter-= 1;
-	if(StartupTaskCounter == 0)
-	{
-		OnStartupComplete.Broadcast();
-	}
+	DecrementStartupTask();
 }
 
 void UAccelByteCommonCommerceSubsystem::HandleOnLoginStatusChanged(int UserIndex, ELoginStatus::Type OldStatus,	ELoginStatus::Type NewStatus, const FUniqueNetId& UniqueNetId)
@@ -135,12 +142,8 @@ void UAccelByteCommonCommerceSubsystem::HandleOnLoginStatusChanged(int UserIndex
 		DefaultSubsystem->GetStoreV2Interface()->QueryOffersByFilter(UniqueNetId, FOnlineStoreFilter(),
 			FOnQueryOnlineStoreOffersComplete::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnQueryOffersDefaultCompleted));
 		DefaultSubsystem->GetStoreV2Interface()->QueryCategories(UniqueNetId, FOnQueryOnlineStoreCategoriesComplete::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnQueryCategoriesCompleted));
-		DefaultSubsystem->GetEntitlementsInterface()->QueryEntitlements(UniqueNetId, TEXT(""));
-		// TODO: Replace this with OSS interface
-		ApiClientPtr = StaticCastSharedPtr<FOnlineIdentityAccelByte>(DefaultSubsystem->GetIdentityInterface())->GetApiClient(UniqueNetId);
-		ApiClientPtr->Wallet.GetWalletInfoByCurrencyCode(TEXT("JC"),
-			THandler<FAccelByteModelsWalletInfo>::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnGetWalletInfoByCurrencyCode),
-			GenericErrorHandler);
+		QueryEntitlements();
+		QueryBalance();
 	}
 	if(PlatformSubsystem)
 	{
@@ -166,12 +169,8 @@ void UAccelByteCommonCommerceSubsystem::HandleOnQueryOffersPlatformCompleted(boo
 			}
 		}
 	}
-	
-	StartupTaskCounter-= 1;
-	if(StartupTaskCounter == 0)
-	{
-		OnStartupComplete.Broadcast();
-	}
+
+	DecrementStartupTask();
 }
 
 void UAccelByteCommonCommerceSubsystem::HandleOnQueryOffersDefaultCompleted(bool bWasSuccessful, const TArray<FUniqueOfferId>& OfferIds, const FString& Error)
@@ -190,40 +189,40 @@ void UAccelByteCommonCommerceSubsystem::HandleOnQueryOffersDefaultCompleted(bool
 					TArray<FPurchasingOfferDisplay>& OfferDisplays = AllOffers.FindOrAdd(EOnlineSubsystemType::AccelByte).FindOrAdd(*Category);
 					FPurchasingOfferDisplay OfferDisplay = FPurchasingOfferDisplay::Create(*Offer);
 					OfferDisplays.Add(OfferDisplay);
-					CacheImage(OfferDisplay);
+					if(!OfferDisplay.IconUrl.IsEmpty())
+					{
+						CacheImage(OfferDisplay);
+					}
 				}
 			}
 		}
 	}
-	StartupTaskCounter-= 1;
-	if(StartupTaskCounter == 0)
-	{
-		OnStartupComplete.Broadcast();
-	}
+	DecrementStartupTask();
 }
 
 void UAccelByteCommonCommerceSubsystem::HandleCheckoutDefaultComplete(const FOnlineError& OnlineError, const TSharedRef<FPurchaseReceipt, ESPMode::ThreadSafe>& Receipt)
 {
 	OnCheckoutSuccess.Broadcast(OnlineError.bSucceeded, OnlineError.ErrorMessage.ToString(), Receipt->ReceiptOffers.Num() > 0 ? Receipt->ReceiptOffers[0].OfferId : TEXT(""));
-	ApiClientPtr->Wallet.GetWalletInfoByCurrencyCode(TEXT("JC"),
-		THandler<FAccelByteModelsWalletInfo>::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnGetWalletInfoByCurrencyCode),
-		GenericErrorHandler);
+	QueryBalance();
+	QueryEntitlements();
 }
 
 void UAccelByteCommonCommerceSubsystem::HandleCheckoutPlatformComplete(const FOnlineError& OnlineError, const TSharedRef<FPurchaseReceipt, ESPMode::ThreadSafe>& Receipt)
 {
+	// Currently steam purchase doesn't know if purchase success or not.
 	const FOnlineIdentityAccelBytePtr IdentityInterface = StaticCastSharedPtr<FOnlineIdentityAccelByte>(DefaultSubsystem->GetIdentityInterface());
-	FVoidHandler OnSyncSuccess;
-	// need to determine what platform are we in.
 	IdentityInterface->GetApiClient(0)->Entitlement.SyncPlatformPurchase(EAccelBytePlatformSync::STEAM,
-		FVoidHandler::CreateWeakLambda(this, [this, &OnlineError, Receipt]()
+		FVoidHandler::CreateWeakLambda(this, [this, Receipt]()
 		{
-			OnCheckoutSuccess.Broadcast(OnlineError.bSucceeded, OnlineError.ErrorMessage.ToString(),
-				// need to update on Steam OSS, might be no need?
+			QueryBalance();
+			OnCheckoutSuccess.Broadcast(true, TEXT(""),
 				Receipt->ReceiptOffers.Num() > 0 ? Receipt->ReceiptOffers[0].OfferId : TEXT(""));
 		}),
-		// TODO: add proper error handler
-		FErrorHandler()
+		FErrorHandler::CreateWeakLambda(this, [this, Receipt](int32 Code, FString const& ErrMsg)
+		{
+			OnCheckoutSuccess.Broadcast(false, FString::Printf(TEXT("Purchase Failed, %d: %s"), Code, *ErrMsg),
+				Receipt->ReceiptOffers.Num() > 0 ? Receipt->ReceiptOffers[0].OfferId : TEXT(""));
+		})
 	);
 }
 
@@ -237,23 +236,29 @@ void UAccelByteCommonCommerceSubsystem::HandleOnQueryEntitlementsComplete(bool b
 		AllEntitlements.Emplace(Ent->Id, FUserEntitlement::Create(Ent));
 	}
 	
-	StartupTaskCounter-= 1;
-	if(StartupTaskCounter == 0)
-	{
-		OnStartupComplete.Broadcast();
-	}
+	OnQueryEntitlementsComplete.Broadcast();
+	
+	DecrementStartupTask();
 }
 
 void UAccelByteCommonCommerceSubsystem::CacheImage(FPurchasingOfferDisplay& Purchasing)
 {
 	StartupTaskCounter += 1;
-	FCommonImageUtils::GetImage(Purchasing.IconUrl, FOnImageReceived::CreateWeakLambda(this, [this, Purchasing](FCacheBrush Brush)
+	FCommonImageUtils::GetImage(Purchasing.IconUrl, FOnImageReceived::CreateWeakLambda(this, [this](FCacheBrush Brush)
 	{
-//		Purchasing.IconBrush = *Brush.Get();
+		DecrementStartupTask();
+	}), Purchasing.Id);
+}
+
+void UAccelByteCommonCommerceSubsystem::DecrementStartupTask()
+{
+	bool bIsStartupCompleted = IsStartupTaskComplete();
+	if(!bIsStartupCompleted)
+	{
 		StartupTaskCounter-= 1;
 		if(StartupTaskCounter == 0)
 		{
 			OnStartupComplete.Broadcast();
 		}
-	}), Purchasing.Id);
+	}
 }

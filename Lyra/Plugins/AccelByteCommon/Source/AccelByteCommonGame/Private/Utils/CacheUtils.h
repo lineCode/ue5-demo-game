@@ -36,7 +36,7 @@ public:
 	* @param UserId The id of the user.
 	* @return True if the user cache is exist or false otherwise.
 	*/
-	static bool IsUserCacheExist(FString UserId);
+	static bool IsImageCacheExist(FString ImageId);
 
 	/**
 	* @brief Save user avatar cached.
@@ -45,7 +45,7 @@ public:
 	* @param Binary The binary file of the avatar image.
 	* @return True if the avatar image cache is successfully saved of false otherwise.
 	*/
-	static bool SaveUserAvatarCache(const FString& Filename, const TArray<uint8>& Binary);
+	static bool SaveImageCache(const FString& Filename, const TArray<uint8>& Binary);
 
 	/**
 	* @brief Get user avatar cache.
@@ -53,12 +53,17 @@ public:
 	* @param UserId The id of the user.
 	* @return Avatar image brush of the user.
 	*/
-	static FCacheBrush GetUserAvatarCache(FString UserId);
+	static FCacheBrush GetImageCache(FString ImageId);
 
 	/** Cache directory. */
-	static FString CacheDir;
+	static FString GetCacheDir();
 
 private:
 	/** The list of the user caches. */
 	static FUserCaches UserCaches;
 };
+
+inline FString FCommonCacheUtils::GetCacheDir()
+{
+	return FPaths::ProjectSavedDir() / TEXT("Caches");
+}
