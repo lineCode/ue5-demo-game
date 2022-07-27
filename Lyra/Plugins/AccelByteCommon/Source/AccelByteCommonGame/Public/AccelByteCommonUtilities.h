@@ -1,9 +1,27 @@
-﻿#pragma once
+﻿// Copyright (c) 2022 AccelByte Inc. All Rights Reserved.
+// This is licensed software from AccelByte Inc, for limitations
+// and restrictions contact your company contract manager.
 
-class AccelByteCommonUtilities
+#pragma once
+
+#include "CoreMinimal.h"
+
+#include "AccelByteCommonUtilities.generated.h"
+
+/**
+ * 
+ */
+UCLASS()
+class UAccelByteCommonUtilities : public UBlueprintFunctionLibrary
 {
+	GENERATED_BODY()
 public:
-	DECLARE_DELEGATE_OneParam(FOnImageReceived, TSharedPtr<const FSlateBrush>);
-	
-//	static void GetImage(const FString& Url, const FOnImageReceived& OnImageReceived, )
+	UFUNCTION(BlueprintPure, Category = "Project Version")
+    static FString GetProjectVersion();
+	UFUNCTION(BlueprintPure, Category = "Project Version")
+    static FString GetGitHash();
+
+private:
+	static FString ProjectVersion;
+	static FString GitHash;
 };

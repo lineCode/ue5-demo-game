@@ -128,11 +128,6 @@ public:
 	
 	EServerSessionType GetServerSessionType() const;
 
-	UFUNCTION(BlueprintCallable, Category="AB Common Server Subsystem")
-	FString GetProjectVersion() const { return ProjectVersion; }
-	UFUNCTION(BlueprintCallable, Category="AB Common Server Subsystem")
-	FString GetGitHash() const { return GitHash; }
-
 	FAccelByteCommonServerGenericDelegate OnServerLoginCompleteDelegate;
 	FAccelByteCommonServerGenericDelegate OnServerRegisterToDSMCompleteDelegate;
 	FAccelByteSessionInfoReceivedDelegate OnSessionInfoReceivedDelegate;
@@ -183,10 +178,6 @@ private:
 	FDedicatedServerInfo SimpleSessionInfo;
 	FAccelByteModelsSessionBrowserData SessionData;
 	EServerState ServerState { EServerState::NotStarted };
-
-	// temporary put the version in this class, might be better create a new class
-	FString ProjectVersion;
-	FString GitHash;
 
 	FTimerHandle DestructDSHandle;
 };

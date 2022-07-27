@@ -683,16 +683,18 @@ FString UAccelByteCommonPartySubsystem::GetCachedPartyDataString(int32 LocalPlay
 		check(IdentityPtr);
 
 		const FUniqueNetIdPtr LocalUserId = IdentityPtr->GetUniquePlayerId(LocalPlayerIndex);
-
-		const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
-
-		if (OnlineParty.IsValid())
+		if(LocalUserId.IsValid())
 		{
-			const FOnlinePartyDataConstPtr PartyData = PartyPtr->GetPartyData(*LocalUserId, *OnlineParty->PartyId, DefaultPartyDataNamespace);
-			FVariantData VariantData;
-			PartyData->GetAttribute(PartyAttrName, VariantData);
-
-			DataString = VariantData.ToString();
+			const FOnlinePartyConstPtr OnlineParty = PartyPtr->GetParty(*LocalUserId, PartyTypeId);
+	
+			if (OnlineParty.IsValid())
+			{
+				const FOnlinePartyDataConstPtr PartyData = PartyPtr->GetPartyData(*LocalUserId, *OnlineParty->PartyId, DefaultPartyDataNamespace);
+				FVariantData VariantData;
+				PartyData->GetAttribute(PartyAttrName, VariantData);
+	
+				DataString = VariantData.ToString();
+			}
 		}
 	}
 

@@ -17,6 +17,7 @@ void UAccelByteCommonServerSubsystem::Initialize(FSubsystemCollectionBase& Colle
 {
 	Super::Initialize(Collection);
 	
+	FString ProjectVersion;
 	GConfig->GetString(
 		TEXT("/Script/EngineSettings.GeneralProjectSettings"),
 		TEXT("ProjectVersion"),
@@ -24,6 +25,7 @@ void UAccelByteCommonServerSubsystem::Initialize(FSubsystemCollectionBase& Colle
 		GGameIni
 	);
 
+	FString GitHash;
 	GConfig->GetString(
 		TEXT("/Script/EngineSettings.GeneralProjectSettings"),
 		TEXT("GitHash"),
