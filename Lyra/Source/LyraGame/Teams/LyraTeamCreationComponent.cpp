@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "LyraTeamCreationComponent.h"
+
 #include "Net/UnrealNetwork.h"
 #include "GameModes/LyraExperienceDefinition.h"
 #include "GameModes/LyraExperienceManagerComponent.h"
@@ -87,6 +88,7 @@ void ULyraTeamCreationComponent::ServerAssignPlayersToTeams()
 void ULyraTeamCreationComponent::ServerChooseTeamForPlayer(ALyraPlayerState* PS)
 {
 	// #START @AccelByte Implementation: Pre Assigned bots
+	// assign pre-assigned team to bots
 	if (PS->IsABot())
 	{
 		ALyraGameMode* LyraGameMode = GetGameMode<ALyraGameMode>();
@@ -109,7 +111,32 @@ void ULyraTeamCreationComponent::ServerChooseTeamForPlayer(ALyraPlayerState* PS)
 
 		return;
 	}
+
+	// Destroy bot when new player joins mid-match
+	// Will only be "used" on custom session, since matchmaking have less player limit and no bots
+	int32 MaxPlayerInMatch = 0;
+	GConfig->GetInt(TEXT("AccelByteSocialToolkit"), TEXT("MaxPartyMembers_CustomSession"), MaxPlayerInMatch, GEngineIni);
+	const int32 CurrentPlayerNum = GetWorld()->GetNumControllers();
+
+
+	// kick first bots if match full
+	if (CurrentPlayerNum >= MaxPlayerInMatch)
+	{
+		for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+		{
+			const TWeakObjectPtr<AController> Controller = *It;
+			if (Controller->PlayerState->IsABot() && HasAuthority())
+			{
+				APawn* FormerPawn = Controller->GetPawn();
+				Controller->UnPossess();
+				Controller->Destroy(true);
+				FormerPawn->Destroy(true);
+				break;
+			}
+		}
+	}
 	// #END
+
 	if (PS->IsOnlyASpectator())
 	{
 		PS->SetGenericTeamId(FGenericTeamId::NoTeam);

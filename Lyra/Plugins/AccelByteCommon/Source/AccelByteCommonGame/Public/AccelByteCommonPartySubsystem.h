@@ -445,6 +445,8 @@ protected:
 
 	IOnlineSubsystem* OSS;
 
+	bool bIsPartyInviteConfirmationShown = false;
+
 private:
 	static FString SetPartyDataArrayOfString_Helper(TArray<FString> InArray);
 

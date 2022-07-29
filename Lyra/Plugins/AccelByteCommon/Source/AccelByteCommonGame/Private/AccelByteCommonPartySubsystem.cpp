@@ -367,12 +367,16 @@ void UAccelByteCommonPartySubsystem::SetPartyNotifDelegates(int32 LocalPlayerInd
 				const FOnlinePartyId& PartyId,
 				const FUniqueNetId& SenderId)
 			{
-				const FABPartySubsystemPartyMember Sender(
-					FUniqueNetIdRepl(SenderId),
-					FriendsPtr->GetFriend(LocalPlayerIndex, SenderId, "")->GetDisplayName(),
-					&PartyId);
+				// prevent confirmation menu to be shown multiple times
+				if (!bIsPartyInviteConfirmationShown)
+				{
+					const FABPartySubsystemPartyMember Sender(
+						FUniqueNetIdRepl(SenderId),
+						FriendsPtr->GetFriend(LocalPlayerIndex, SenderId, "")->GetDisplayName(),
+						&PartyId);
 
-				ShowReceivedInvitePopup(this, Sender, LocalPlayerIndex);
+					ShowReceivedInvitePopup(this, Sender, LocalPlayerIndex);
+				}
 			});
 	}
 }
@@ -775,7 +779,9 @@ void UAccelByteCommonPartySubsystem::ShowReceivedInvitePopup(
 						RejectPartyInvite(Sender.UserInfo.UserId, LocalPlayerIndex);
 						break;
 					}
+					bIsPartyInviteConfirmationShown = false;
 				});
+			bIsPartyInviteConfirmationShown = true;
 			Messaging->ShowConfirmation(Descriptor, ResultCallback);
 		}
 	}
