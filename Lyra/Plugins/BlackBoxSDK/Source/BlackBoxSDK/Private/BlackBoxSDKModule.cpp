@@ -1,4 +1,4 @@
-// Copyright (c) 2019 - 2021 AccelByte Inc. All Rights Reserved.
+// Copyright (c) 2019 - 2022 AccelByte Inc. All Rights Reserved.
 // This is licensed software from AccelByte Inc, for limitations
 // and restrictions contact your company contract manager.
 
@@ -105,7 +105,36 @@ ZlibCompress(void* CompressedBuffer, int32& CompressedSize, const void* Uncompre
 }
 static void SessionCreatedCallback(const blackbox::callback_http_response&, const char*);
 static void MachineInfoGatherCallback();
+static void OnPlaytestIdRetrieved(const char*);
 } // namespace BlackboxSDK
+
+class MissionOutputDevice : public FOutputDevice {
+public:
+    MissionOutputDevice()
+    {
+        check(GLog);
+        GLog->AddOutputDevice(this);
+        if (GLog->IsRedirectingTo(this))
+            return; // Never gets hit
+
+        return;
+    };
+
+    ~MissionOutputDevice()
+    {
+        if (GLog != nullptr) {
+            GLog->RemoveOutputDevice(this);
+        }
+    };
+
+    virtual void Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const FName& Category) override
+    {
+        FString Format = FOutputDeviceHelper::FormatLogLine(Verbosity, Category, V, GPrintLogTimes);
+        auto Conv = StringCast<ANSICHAR>(*Format);
+        const char* UE_log_char = Conv.Get();
+        blackbox::collect_log_streaming_data(UE_log_char);
+    }
+};
 
 #define LOCTEXT_NAMESPACE "FAccelByteBlackBoxSDK"
 
@@ -159,6 +188,7 @@ private:
     static FAccelByteBlackBoxSDKModule* Self;
     void* BlackBoxDllHandle = nullptr;
     FString SessionId;
+    FString PlaytestId;
     FString SDKVersion;
     TUniquePtr<FInfoManager> InfoManager;
     TUniquePtr<FBackbufferManager> BackbufferManager;
@@ -170,8 +200,10 @@ private:
     FString IssueReporterPath;
     bool ConfigValidated = false;
     bool InGameSession = false;
+    TUniquePtr<MissionOutputDevice> BlackBoxLogger;
     friend void BlackboxSDK::SessionCreatedCallback(const blackbox::callback_http_response&, const char*);
     friend void BlackboxSDK::MachineInfoGatherCallback();
+    friend void BlackboxSDK::OnPlaytestIdRetrieved(const char*);
 };
 FAccelByteBlackBoxSDKModule* FAccelByteBlackBoxSDKModule::Self = nullptr;
 
@@ -193,6 +225,17 @@ void BlackboxSDK::SessionCreatedCallback(const blackbox::callback_http_response&
         UE_LOG(LogBlackBox, Log, TEXT("Got Session ID: %s"), *ModuleInstance->SessionId);
 #if !BLACKBOX_UE_SONY
         FPlatformCrashContext::SetGameData(TEXT("BlackBox.SessionID"), ModuleInstance->SessionId);
+#endif
+    }
+}
+
+void BlackboxSDK::OnPlaytestIdRetrieved(const char* playtest_id)
+{
+    auto ModuleInstance = FAccelByteBlackBoxSDKModule::Instance();
+    if (ModuleInstance) {
+        ModuleInstance->PlaytestId = FString::Printf(TEXT("%s"), UTF8_TO_TCHAR(playtest_id));
+#if !BLACKBOX_UE_SONY
+        FPlatformCrashContext::SetGameData(TEXT("BlackBox.PlayTestID"), ModuleInstance->PlaytestId);
 #endif
     }
 }
@@ -293,6 +336,7 @@ FAccelByteBlackBoxSDKModule* FAccelByteBlackBoxSDKModule::Instance()
 void FAccelByteBlackBoxSDKModule::StartupModule()
 {
     UE_LOG(LogBlackBox, Log, TEXT("SDK MODULE Startup Module"));
+    BlackBoxLogger = MakeUnique<MissionOutputDevice>();
     std::string sdk_ver = blackbox::info_get_version();
     SDKVersion = FString(UTF8_TO_TCHAR(sdk_ver.c_str()));
     UE_LOG(LogBlackBox, Log, TEXT("SDK Version: %s"), *SDKVersion);
@@ -335,7 +379,8 @@ void FAccelByteBlackBoxSDKModule::StartupModule()
     Ticker::GetCoreTicker().AddTicker(FTickerDelegate::CreateRaw(this, &FAccelByteBlackBoxSDKModule::OnEngineTick));
 
     IssueFolder = FPaths::Combine(*FPaths::ProjectSavedDir(), TEXT("Issues"));
-    IssueReporterPath = FPaths::ProjectPluginsDir() / +"BlackBoxSDK/issue_reporter/" + "x64" + "/blackbox_issue_reporter.exe";
+    IssueReporterPath =
+        FPaths::ProjectPluginsDir() / +"BlackBoxSDK/issue_reporter/" + "x64" + "/blackbox_issue_reporter.exe";
     UE_LOG(LogBlackBox, Log, TEXT("SDK MODULE Startup Module - END"));
 }
 
@@ -373,10 +418,11 @@ void FAccelByteBlackBoxSDKModule::StartSDK()
         UE_LOG(LogBlackBox, Log, TEXT("Creating Session"));
         SDKInformation Info = InfoManager->GetSDKInformation();
         if (Info.BuildId.IsEmpty()) {
-            blackbox::start_new_session_on_editor(&BlackboxSDK::SessionCreatedCallback);
+            blackbox::start_new_session_on_editor(
+                &BlackboxSDK::SessionCreatedCallback, &BlackboxSDK::OnPlaytestIdRetrieved);
         }
         else {
-            blackbox::start_new_session(&BlackboxSDK::SessionCreatedCallback);
+            blackbox::start_new_session(&BlackboxSDK::SessionCreatedCallback, &BlackboxSDK::OnPlaytestIdRetrieved);
         }
         UE_LOG(LogBlackBox, Log, TEXT("SDK MODULE Start SDK - END"));
     }
@@ -392,6 +438,7 @@ void FAccelByteBlackBoxSDKModule::StopSDK()
         blackbox::stop_profiling();
         InfoManager->ResetKeyInformation();
         blackbox::clear_pending_tasks();
+        blackbox::stop_log_streaming();
         UE_LOG(LogBlackBox, Log, TEXT("SDK MODULE Stop SDK - END"));
     }
 }
@@ -405,6 +452,8 @@ void FAccelByteBlackBoxSDKModule::StopSDK()
 
 void FAccelByteBlackBoxSDKModule::RegisterSettings()
 {
+    UBlackBoxSettings* BlackBoxSettings = GetMutableDefault<UBlackBoxSettings>();
+    BlackBoxSettings->InitializeLocalConfigProperties();
 #if WITH_EDITOR
     if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings")) {
         SettingsModule->RegisterSettings(
@@ -413,7 +462,7 @@ void FAccelByteBlackBoxSDKModule::RegisterSettings()
             TEXT("AccelByte BlackBox SDK"),
             FText::FromName(TEXT("AccelByte BlackBox SDK")),
             FText::FromName(TEXT("Setup your plugin.")),
-            GetMutableDefault<UBlackBoxSettings>());
+            BlackBoxSettings);
     }
     OnPropertyChangedDelegateHandle =
         FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FAccelByteBlackBoxSDKModule::OnPropertyChanged);
@@ -437,8 +486,7 @@ bool FAccelByteBlackBoxSDKModule::LoadSettings()
     SDKInfo.IamUrl = FString(TEXT(__BLACKBOX_BASE_URL__)) + TEXT("/iam");
     SDKInfo.DownloadURL = TEXT(__BLACKBOX_DOWNLOAD_URL__);
     SDKInfo.LatestReleaseURL = TEXT(__BLACKBOX_RELEASE_INFO_URL__);
-    bool ExperimentalServerBuildIdFeature =
-        GetDefault<UBlackBoxSettings>()->ExperimentalServerBuildIdFeature;
+    bool ExperimentalServerBuildIdFeature = GetDefault<UBlackBoxSettings>()->ExperimentalServerBuildIdFeature;
     bool IsServer = IsRunningDedicatedServer() && ExperimentalServerBuildIdFeature;
 
 #if WITH_EDITOR
@@ -533,7 +581,7 @@ bool FAccelByteBlackBoxSDKModule::LoadSettings()
         UE_LOG(LogBlackBox, Log, TEXT("Version ID   : %s"), *SDKInfo.GameVersionId);
     }
 
-    GetMutableDefault<UBlackBoxSettings>()->InitialExperimentalServerBuildIdFeature = ExperimentalServerBuildIdFeature;
+    GetMutableDefault<UBlackBoxSettings>()->InitializeNeedToRestartOnChangeProperties();
 
     FString DetectedBuildIdText = IsServer ? "Build ID (Server)" : "Build ID";
     if (SDKInfo.BuildId.IsEmpty()) {
@@ -565,8 +613,6 @@ bool FAccelByteBlackBoxSDKModule::LoadSettings()
         SetLogCallbackSeverity(static_cast<uint8>(BlackBoxLogSeverity::WARNING));
     }
 
-    SDKInfo.EnableHardwareInformationGathering = GetDefault<UBlackBoxSettings>()->EnableHardwareInformationGathering;
-
     InfoManager->SetSDKInformation(SDKInfo);
     return true;
 }
@@ -592,12 +638,15 @@ void FAccelByteBlackBoxSDKModule::OnPropertyChanged(
         else {
             EnableLog(false);
         }
-        Info.EnableHardwareInformationGathering = settings->EnableHardwareInformationGathering;
-        InfoManager->SetSDKInformation(Info);
 
-        if (settings->ExperimentalServerBuildIdFeature != settings->InitialExperimentalServerBuildIdFeature) {
-            UBlackBoxSettings::ShowMustRestartDialog();
+        if (settings->CheckNeedToRestart(PropertyChangedEvent.GetPropertyName().ToString())) {
+            settings->ShowMustRestartDialog();
         }
+
+        settings->ApplyLocalConfigProperties();
+        blackbox::save_local_config(TCHAR_TO_UTF8(FApp::GetProjectName()));
+
+        InfoManager->SetSDKInformation(Info);
     }
 }
 
@@ -655,6 +704,11 @@ void FAccelByteBlackBoxSDKModule::GatherProcessInformation()
         FPaths::ProjectPluginsDir() / +"BlackBoxSDK/issue_reporter/" + arch + "/blackbox_issue_reporter.exe";
     ProcInfo.BlackBoxIssueReporterPath =
         IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*IssueReporterExePath);
+#elif BLACKBOX_UE_LINUX
+    // Helper
+    FString HelperExePath{};
+    HelperExePath = FPaths::ProjectPluginsDir() / +"BlackBoxSDK/helper/linux/blackbox_helper";
+    ProcInfo.BlackBoxHelperPath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*HelperExePath);
 #endif
 
     // Gather Crash directory information

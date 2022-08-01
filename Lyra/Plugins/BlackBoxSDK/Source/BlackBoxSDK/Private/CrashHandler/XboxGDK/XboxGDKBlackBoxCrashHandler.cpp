@@ -34,6 +34,7 @@ FXboxGDKBlackBoxCrashHandler::FXboxGDKBlackBoxCrashHandler()
                                      char* Stacktrace,
                                      size_t StacktraceSize) {
         blackbox::handle_crash(MiniDumpPath, CrashLogPath, RuntimeXmlData, RuntimeXmlSize, Stacktrace, StacktraceSize);
+#    if ENGINE_MAJOR_VERSION == 4
         auto IsConfigValid = blackbox::validate_config();
         if (IsConfigValid) {
             auto OriginalCrashMalloc = GMalloc;
@@ -41,6 +42,7 @@ FXboxGDKBlackBoxCrashHandler::FXboxGDKBlackBoxCrashHandler()
             blackbox::send_crash(TCHAR_TO_ANSI(TEXT("D:\\")), nullptr, true);
             GMalloc = OriginalCrashMalloc;
         };
+#    endif
     };
     FPlatformCrashContext::SetCustomCrashJob(BlackboxCustomCrashJob);
 #endif

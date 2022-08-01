@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021 AccelByte Inc. All Rights Reserved.
+// Copyright (c) 2020-2022 AccelByte Inc. All Rights Reserved.
 // This is licensed software from AccelByte Inc, for limitations
 // and restrictions contact your company contract manager.
 
@@ -166,7 +166,6 @@ SDKInformation FInfoManager::GetSDKInformation()
     SDKInfo.Namespace = UTF8_TO_TCHAR(blackbox::config_get_namespace());
     SDKInfo.BuildId = UTF8_TO_TCHAR(blackbox::config_get_build_id());
     SDKInfo.CoreSDKConfigPath = UTF8_TO_TCHAR(blackbox::config_get_config_path());
-    SDKInfo.EnableHardwareInformationGathering = blackbox::config_get_enable_hardware_info_gathering();
 
     return SDKInfo;
 }
@@ -193,7 +192,12 @@ std::string FInfoManager::GetGamertag()
     UE_LOG(LogBlackBox, Log, TEXT("Gamertag fetch starting"));
     std::string Gamertag = "Xbox User";
     // Use 0 seat index since UE4 always attempts to put the default user on seat 0
+#    if ENGINE_MAJOR_VERSION == 4
     FPlatformUserId SeatIndex = 0;
+#    else
+    FPlatformUserId SeatIndex = FPlatformMisc::GetPlatformUserForUserIndex(0);
+#    endif
+
     UE_LOG(LogBlackBox, Log, TEXT("Fetching default user handle..."));
     FGDKUserHandle UserHandle = FGDKUserManager::Get().GetUserHandleByPlatformId(SeatIndex);
     if (UserHandle == NULL) {
@@ -231,7 +235,6 @@ void FInfoManager::UpdateBlackBoxConfiguration(const SDKInformation& SDKInfo_)
     blackbox::config_set_build_id(TCHAR_TO_UTF8(*SDKInfo_.BuildId));
     blackbox::config_set_config_path(TCHAR_TO_UTF8(*SDKInfo_.CoreSDKConfigPath));
     blackbox::import_default_config(TCHAR_TO_UTF8(*SDKInfo_.CoreSDKConfigPath));
-    blackbox::config_set_enable_hardware_info_gathering(SDKInfo_.EnableHardwareInformationGathering);
 
 #    if WITH_EDITOR
     blackbox::config_set_is_using_editor(true);

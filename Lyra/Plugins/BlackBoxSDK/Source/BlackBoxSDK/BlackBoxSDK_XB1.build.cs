@@ -109,7 +109,8 @@ public class BlackBoxSDKPlatform_XB1 : BlackBoxSDKPlatform
     {
         return new Dictionary<string, string>
         {
-            {"$(TargetOutputDir)/XCurl.dll", Path.Combine(XCurlDllDir, "XCurl.dll")}
+            {"$(TargetOutputDir)/XCurl.dll", Path.Combine(XCurlDllDir, "XCurl.dll")},
+            {"$(TargetOutputDir)/BlackBoxSDK-XboxSeriesX.dll", Path.Combine(GetDLLsDirPath(), "BlackBoxSDK-XboxSeriesX.dll")}
         };
     }
 

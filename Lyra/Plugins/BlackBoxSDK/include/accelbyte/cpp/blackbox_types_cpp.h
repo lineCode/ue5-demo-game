@@ -54,6 +54,17 @@ struct session_info_update_desc {
     std::string system_architecture;
 };
 
+struct session_info_update_desc_playtest {
+    std::string computer_name;
+    std::string user_name;
+    std::string cpu;
+    uint64_t memory{};
+    std::string operating_system;
+    std::string operating_version;
+    std::string system_architecture;
+    std::string playtest_id;
+};
+
 struct web_configuration {
     uint32_t fps;
     uint32_t kps;
@@ -152,5 +163,39 @@ struct integration_test_result {
     int success;
     std::string result;
 };
+
+struct playtest_build {
+    std::string id;
+    std::string pre_script;
+    std::string post_script;
+};
+
+struct playtest_data {
+    std::string id;
+    std::string game_id;
+    std::string name;
+    std::string description;
+    bool started{};
+    std::string started_at;
+    std::string stopped_at;
+    std::string created_at;
+    std::string updated_at;
+    std::string deleted_at;
+    std::vector<playtest_build> builds;
+};
+
+struct playtest_paging {
+    std::string first;
+    std::string last;
+    std::string next;
+    std::string previous;
+};
+
+struct get_list_playtest_response {
+    std::vector<playtest_data> data;
+    playtest_paging paging;
+    uint64_t total_data{};
+};
+
 } // namespace types
 } // namespace blackbox

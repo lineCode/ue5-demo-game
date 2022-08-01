@@ -14,7 +14,7 @@ public class BlackBoxSDKPlatform_Linux : BlackBoxSDKPlatform
     {
 
     }
-
+    
     private string GetLibsDirPath()
     {
         return Path.Combine(PluginDir, "Libs/x64/Linux");
