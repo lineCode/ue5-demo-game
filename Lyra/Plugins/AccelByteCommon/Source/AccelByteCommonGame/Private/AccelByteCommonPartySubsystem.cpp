@@ -503,7 +503,7 @@ int32 UAccelByteCommonPartySubsystem::GetPartyMemberMax(const int32 LocalPlayerI
 	return MaxPartyMembers;
 }
 
-int32 UAccelByteCommonPartySubsystem::GetPartyMemberLimitPreset(EPartyMatchType PartyMatchType)
+int32 UAccelByteCommonPartySubsystem::GetPartyMemberLimitPreset(EPartyMatchType PartyMatchType) const
 {
 	int32 MaxPartyMembers = 0;
 
@@ -545,9 +545,9 @@ FString UAccelByteCommonPartySubsystem::SetPartyDataArrayOfString(int32 LocalPla
 	return ArrayValuesInString;
 }
 
-FString UAccelByteCommonPartySubsystem::GetLocalPlayerTeam(int32 LocalPlayerIndex) const
+ECustomSessionTeam UAccelByteCommonPartySubsystem::GetLocalPlayerTeam(int32 LocalPlayerIndex) const
 {
-	FString Team = "";
+	ECustomSessionTeam Team = ECustomSessionTeam::NoTeam;
 
 	if (OSS)
 	{
@@ -558,103 +558,84 @@ FString UAccelByteCommonPartySubsystem::GetLocalPlayerTeam(int32 LocalPlayerInde
 
 		if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Team1).Find(LocalAccelByteIdString) != -1)
 		{
-			Team = PartyAttrName_CustomSession_Team1;
+			Team = ECustomSessionTeam::Team1;
 		}
 		else if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Team2).Find(LocalAccelByteIdString) != -1)
 		{
-			Team = PartyAttrName_CustomSession_Team2;
+			Team = ECustomSessionTeam::Team2;
 		}
-		else if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Observer).Find(LocalAccelByteIdString) != -1)
+		else if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Queue).Find(LocalAccelByteIdString) != -1)
 		{
-			Team = PartyAttrName_CustomSession_Observer;
+			Team = ECustomSessionTeam::Queue;
 		}
 	}
 
 	return Team;
 }
 
-void UAccelByteCommonPartySubsystem::ChangeLocalPlayerTeamToNextTeam(int32 LocalPlayerIndex)
+void UAccelByteCommonPartySubsystem::CycleLocalPlayerTeam(bool CycleNext, int32 LocalPlayerIndex)
 {
 	if (OSS)
 	{
 		const FString LocalAccelByteIdString = GetLocalPlayerAccelByteIdString(LocalPlayerIndex);
-		const FString LocalUserTeam = GetLocalPlayerTeam(LocalPlayerIndex);
+		const ECustomSessionTeam LocalUserTeamOld = GetLocalPlayerTeam(LocalPlayerIndex);
+		const int32 LocalUserTeamOldIndex = static_cast<int32>(LocalUserTeamOld);
+		const int32 MaxMemberPerTeam = GetPartyMemberLimitPreset(EPartyMatchType::CustomSession) / 2;
+		const int32 Dif = CycleNext? 1 : -1;
+		constexpr int32 MaxTeamIndex = static_cast<int32>(ECustomSessionTeam::Max);
 
 		TMap<FString, FString> TempData;
-		if (LocalUserTeam == PartyAttrName_CustomSession_Team1)
-		{
-			const FString RemoveResult = RemoveStringFromPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Team1, LocalAccelByteIdString, false);
-			TempData.Add(PartyAttrName_CustomSession_Team1, RemoveResult);
 
-			const FString AppendResult = SetPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Team2, {LocalAccelByteIdString}, true, false);
-			TempData.Add(PartyAttrName_CustomSession_Team2, AppendResult);
-		}
-		else if (LocalUserTeam == PartyAttrName_CustomSession_Team2)
+		// cycle logic
+		ECustomSessionTeam LocalUserTeamNew = LocalUserTeamOld;
+		int32 LocalUserTeamNewIndex = LocalUserTeamOldIndex;
+		bool bIsInValidTeam = false;
+		while (!bIsInValidTeam)
 		{
-			const FString RemoveResult = RemoveStringFromPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Team2, LocalAccelByteIdString, false);
-			TempData.Add(PartyAttrName_CustomSession_Team2, RemoveResult);
+			// increment / decrement team
+			LocalUserTeamNewIndex = PositiveModulo(LocalUserTeamNewIndex + Dif, MaxTeamIndex);
+			LocalUserTeamNew = static_cast<ECustomSessionTeam>(LocalUserTeamNewIndex);
 
-			const FString AppendResult = SetPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Observer, {LocalAccelByteIdString}, true, false);
-			TempData.Add(PartyAttrName_CustomSession_Observer, AppendResult);
-		}
-		else
-		{
-			const FString RemoveResult = RemoveStringFromPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Observer, LocalAccelByteIdString, false);
-			TempData.Add(PartyAttrName_CustomSession_Observer, RemoveResult);
+			// check if target team member valid
+			if (LocalUserTeamNew == ECustomSessionTeam::NoTeam || LocalUserTeamNew == ECustomSessionTeam::Max)
+			{
+				bIsInValidTeam = false;
+				continue;
+			}
 
-			const FString AppendResult = SetPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Team1, {LocalAccelByteIdString}, true, false);
-			TempData.Add(PartyAttrName_CustomSession_Team1, AppendResult);
+			// check if target team member full
+			if (GetTeamMembersNum(LocalUserTeamNew, LocalPlayerIndex) >= MaxMemberPerTeam)
+			{
+				bIsInValidTeam = false;
+				continue;
+			}
+
+			bIsInValidTeam = true;
 		}
+
+		// update party data
+		const FString RemoveResult = RemoveStringFromPartyDataArrayOfString(
+				LocalPlayerIndex,
+				PartyAttr_CustomSession_Team[LocalUserTeamOld],
+				LocalAccelByteIdString,
+				false);
+		TempData.Add(PartyAttr_CustomSession_Team[LocalUserTeamOld], RemoveResult);
+
+		const FString AppendResult = SetPartyDataArrayOfString(
+			LocalPlayerIndex,
+			PartyAttr_CustomSession_Team[LocalUserTeamNew],
+			{LocalAccelByteIdString},
+			true, false);
+		TempData.Add(PartyAttr_CustomSession_Team[LocalUserTeamNew], AppendResult);
+
 		SetPartyData(LocalPlayerIndex, TempData);
 	}
 }
 
-void UAccelByteCommonPartySubsystem::ChangeLocalPlayerTeamToPreviousTeam(int32 LocalPlayerIndex)
+int32 UAccelByteCommonPartySubsystem::GetTeamMembersNum(ECustomSessionTeam Team, const int32 LocalPlayerIndex) const
 {
-	if (OSS)
-	{
-		const FString LocalAccelByteIdString = GetLocalPlayerAccelByteIdString(LocalPlayerIndex);
-		const FString LocalUserTeam = GetLocalPlayerTeam(LocalPlayerIndex);
-
-		TMap<FString, FString> TempData;
-		if (LocalUserTeam == PartyAttrName_CustomSession_Team1)
-		{
-			const FString RemoveResult = RemoveStringFromPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Team1, LocalAccelByteIdString, false);
-			TempData.Add(PartyAttrName_CustomSession_Team1, RemoveResult);
-
-			const FString AppendResult = SetPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Observer, {LocalAccelByteIdString}, true, false);
-			TempData.Add(PartyAttrName_CustomSession_Observer, AppendResult);
-		}
-		else if (LocalUserTeam == PartyAttrName_CustomSession_Team2)
-		{
-			const FString RemoveResult = RemoveStringFromPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Team2, LocalAccelByteIdString, false);
-			TempData.Add(PartyAttrName_CustomSession_Team2, RemoveResult);
-
-			const FString AppendResult = SetPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Team1, {LocalAccelByteIdString}, true, false);
-			TempData.Add(PartyAttrName_CustomSession_Team1, AppendResult);
-		}
-		else
-		{
-			const FString RemoveResult = RemoveStringFromPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Observer, LocalAccelByteIdString, false);
-			TempData.Add(PartyAttrName_CustomSession_Observer, RemoveResult);
-
-			const FString AppendResult = SetPartyDataArrayOfString(
-				LocalPlayerIndex, PartyAttrName_CustomSession_Team2, {LocalAccelByteIdString}, true, false);
-			TempData.Add(PartyAttrName_CustomSession_Team2, AppendResult);
-		}
-		SetPartyData(LocalPlayerIndex, TempData);
-	}
+	const TArray<FString> TeamMember = GetCachedPartyDataArrayOfString(LocalPlayerIndex, PartyAttr_CustomSession_Team[Team]);
+	return TeamMember.Num();
 }
 
 FString UAccelByteCommonPartySubsystem::RemoveStringFromPartyDataArrayOfString(
@@ -705,8 +686,9 @@ FString UAccelByteCommonPartySubsystem::GetCachedPartyDataString(int32 LocalPlay
 	return DataString;
 }
 
-TArray<FString> UAccelByteCommonPartySubsystem::GetCachedPartyDataArrayOfString(int32 LocalPlayerIndex,
-	FString PartyAttrName)
+TArray<FString> UAccelByteCommonPartySubsystem::GetCachedPartyDataArrayOfString(
+	int32 LocalPlayerIndex,
+	FString PartyAttrName) const
 {
 	const FString ValueString = GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName);
 	TArray<FString> Values;
@@ -869,4 +851,9 @@ FString UAccelByteCommonPartySubsystem::SetPartyDataArrayOfString_Helper(TArray<
 		Result += Value + ",";
 	}
 	return Result;
+}
+
+int32 UAccelByteCommonPartySubsystem::PositiveModulo(const int32 i, const int32 n)
+{
+	return ((i % n) + n) % n;
 }

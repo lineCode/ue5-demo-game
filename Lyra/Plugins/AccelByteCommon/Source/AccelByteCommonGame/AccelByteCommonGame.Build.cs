@@ -15,7 +15,8 @@ public class AccelByteCommonGame : ModuleRules
 			{
 				"Core", 
 				"AccelByteUe4Sdk",
-				"CommonUser"
+				"CommonUser",
+				"OnlineSubsystemAccelByte"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
