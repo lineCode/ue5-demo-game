@@ -1,4 +1,4 @@
-// Copyright (c) 2020 AccelByte Inc. All Rights Reserved.
+// Copyright (c) 2020-2022 AccelByte Inc. All Rights Reserved.
 // This is licensed software from AccelByte Inc, for limitations
 // and restrictions contact your company contract manager.
 #pragma once
@@ -14,6 +14,7 @@ enum class code : uint32_t {
     MISSING_CRASH_VIDEO_RECORDER,
     MISSING_SESSION_MANAGER,
     MISSING_PROFILING_MANAGER,
+    MISSING_LOGGING_MANAGER,
     MISSING_HTTP_WORKER_THREAD,
     MISSING_CALLBACK_QUEUE_THREAD,
     MISSING_DYNAMIC_PROFILER_BACKEND,
@@ -28,6 +29,7 @@ enum class code : uint32_t {
     FAILED_TO_CREATE_VIDEO_RECORDER_MANAGER,
     FAILED_TO_CREATE_PROFILING_MANAGER,
     FAILED_TO_CREATE_HELPER_PROCESS,
+    FAILED_TO_CREATE_LOG_STREAMER,
     FAILED_TO_CHECK_HELPER_PROCESS,
     MISSING_HELPER_HANDLE,
     FAILED_TO_DELETE_CRASH_FOLDER,
@@ -58,7 +60,8 @@ enum class code : uint32_t {
     DEFAULT_CONFIG_FILE_NOT_FOUND,
     INVALID_HELPER_COMMAND,
     FAILED_TO_CREATE_ISSUE_REPORTER_PROCESS,
-    INVALID_ISSUE_REPORTER_PATH
+    INVALID_ISSUE_REPORTER_PATH,
+    NOT_SUPPORTED_BY_PLATFORM
 };
 } // namespace error
 } // namespace blackbox

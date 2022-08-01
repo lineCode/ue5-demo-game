@@ -1,4 +1,4 @@
-// Copyright (c) 2019 - 2020 AccelByte Inc. All Rights Reserved.
+// Copyright (c) 2019 - 2022 AccelByte Inc. All Rights Reserved.
 // This is licensed software from AccelByte Inc, for limitations
 // and restrictions contact your company contract manager.
 
@@ -10,6 +10,23 @@
 #include "BlackBoxLogSeverity.h"
 #include "BlackBoxSettings.generated.h"
 
+UENUM()
+enum class BlackBoxConfigValE : uint8 {
+    Off UMETA(DisplayName = "Off"),
+    On UMETA(DisplayName = "On"),
+    WebConfig UMETA(DisplayName = "Web Config")
+};
+
+struct BlackBoxConsoleCommand {
+    static FString ConvertToString(const BlackBoxConfigValE& value);
+    static BlackBoxConfigValE ConvertToConfigEnum(const FString& value);
+
+    FString Name{};
+    FString Help{};
+    BlackBoxConfigValE& SettingVar;
+    bool NeedRestartOnChange{};
+};
+
 /**
  * @brief UObject for storing settings into configuration file.
  */
@@ -17,7 +34,7 @@ UCLASS(Config = Engine)
 class BLACKBOXSDK_API UBlackBoxSettings : public UObject {
     GENERATED_BODY()
 public:
-    UBlackBoxSettings() = default;
+    UBlackBoxSettings();
 
     UPROPERTY(EditAnywhere, GlobalConfig, Category = "Settings")
     FString APIKey{};
@@ -34,20 +51,35 @@ public:
     UPROPERTY(EditAnywhere, GlobalConfig, Category = "Settings")
     bool EnableLog{};
 
-    UPROPERTY(EditAnywhere, GlobalConfig, Category = "Settings")
-    bool EnableHardwareInformationGathering = true;
+    UPROPERTY(EditAnywhere, Category = "User Preferences")
+    BlackBoxConfigValE EnableBasicProfiling = BlackBoxConfigValE::Off;
 
-    UPROPERTY(EditAnywhere, GlobalConfig, Category = "Settings")
+    UPROPERTY(EditAnywhere, Category = "User Preferences")
+    BlackBoxConfigValE EnableCrashReporter = BlackBoxConfigValE::On;
+
+    UPROPERTY(EditAnywhere, Category = "User Preferences")
+    BlackBoxConfigValE EnableHardwareInformationGathering = BlackBoxConfigValE::On;
+
+    UPROPERTY(EditAnywhere, Category = "User Preferences")
+    BlackBoxConfigValE EnableStoreCrashVideo = BlackBoxConfigValE::On;
+
+    UPROPERTY(EditAnywhere, GlobalConfig, Category = "Experimental")
     bool ExperimentalServerBuildIdFeature = false;
 
-    bool InitialExperimentalServerBuildIdFeature = false;
-    static void ShowMustRestartDialog()
-    {
-        const FText MustRestartTitle = FText::FromString("BlackBox Setting");
-        const FText MustRestartMessage =
-            FText::FromString("Unreal Editor must be restarted for the changes to take effect");
-        FMessageDialog::Open(EAppMsgType::Type::Ok, MustRestartMessage, &MustRestartTitle);
-    }
+    // <Property Name, Initial Value>
+    TMap<FString, int> NeedToRestartOnChangedProperties{};
+
+    TArray<BlackBoxConsoleCommand> ConsoleCommands{};
+
+    void InitializeLocalConfigProperties();
+
+    void InitializeNeedToRestartOnChangeProperties();
+
+    bool CheckNeedToRestart(const FString& ChangedPropertiesName);
+
+    void ApplyLocalConfigProperties();
+
+    void ShowMustRestartDialog();
 
 #if defined(WITH_EDITOR) && WITH_EDITOR
 #    if ((ENGINE_MAJOR_VERSION == 4) && (ENGINE_MINOR_VERSION < 25))
@@ -56,4 +88,6 @@ public:
     virtual bool CanEditChange(const FProperty* InProperty) const override;
 #    endif
 #endif
+private:
+    void CreateConsoleCommand(BlackBoxConsoleCommand& NewConsoleCommand);
 };

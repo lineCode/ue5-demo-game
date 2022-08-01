@@ -1,4 +1,4 @@
-// Copyright (c) 2021 AccelByte Inc. All Rights Reserved.
+// Copyright (c) 2021-2022 AccelByte Inc. All Rights Reserved.
 // This is licensed software from AccelByte Inc, for limitations
 // and restrictions contact your company contract manager.
 #ifndef ACCELBYTE_BLACKBOX_H
@@ -22,6 +22,7 @@ namespace blackbox {
 
 using session_callback_t = void (*)(const callback_http_response&, const char*);
 using info_gather_callback_t = void (*)();
+using playtest_id_callback_t = void (*)(const char*);
 
 struct ucontext_buffer {
     // Size of ucontext is 936 bytes in unreal's clang toolchain, this is based on old Glibc.
@@ -54,17 +55,20 @@ BLACKBOX_API error::code shutdown_module();
  * enabled components are customizeable from the website
  *
  * @param callback Callback on completion
+ * @param playtest_id_retrieved_callback to fetch playtest id
  * @return error::code Describe any errors encountered
  */
-BLACKBOX_API error::code start_new_session(session_callback_t callback);
+BLACKBOX_API error::code start_new_session(session_callback_t callback, playtest_id_callback_t playtest_id_retrieved_callback);
 
 /**
  * @brief Same as start new session but used inside the editor
  *
  * @param callback Callback on completion
+ * @param playtest_id_retrieved_callback to fetch playtest id
  * @return error::code Describe any errors encountered
  */
-BLACKBOX_API error::code start_new_session_on_editor(session_callback_t callback);
+BLACKBOX_API error::code
+start_new_session_on_editor(session_callback_t callback, playtest_id_callback_t playtest_id_retrieved_callback);
 
 /**
  * @brief Get the session id or empty if the session haven't been started
@@ -292,6 +296,21 @@ BLACKBOX_API error::code set_log_severity(uint8_t enabled_sev);
 BLACKBOX_API error::code set_log_callback(void (*callback)(log::severity, const char*));
 
 /**
+ * @brief Feed the data from unreal engine to send as log stream
+ *
+ * @param data log from unreal engine
+ * @return error::code Describe any errors encountered
+ */
+BLACKBOX_API error::code collect_log_streaming_data(const char* data);
+
+/**
+ * @brief Stop the log streaming module
+ *
+ * @return error::code Describe any errors encountered
+ */
+BLACKBOX_API error::code stop_log_streaming();
+
+/**
  * @brief Set the file compression function object
  *
  * @param tgt_fn function pointer to compression function
@@ -472,13 +491,6 @@ BLACKBOX_API const char* config_get_crash_folder();
  * @return const char* the crash GUID
  */
 BLACKBOX_API const char* config_get_crash_guid();
-
-/**
- * @brief get hardware information gathering switch value
- *
- * @return bool the switch value
- */
-BLACKBOX_API bool config_get_enable_hardware_info_gathering();
 
 /**
  * @brief set and store base url
@@ -701,14 +713,6 @@ BLACKBOX_API error::code config_set_engine_minor_version(uint32_t minor_version)
 BLACKBOX_API error::code config_set_engine_patch_version(uint32_t patch_version);
 
 /**
- * @brief enable or disable client's machice hardware information gathering
- *
- * @param enable the boolean switch to enable or disable information gathering
- * @return error::code any errors encountered
- */
-BLACKBOX_API error::code config_set_enable_hardware_info_gathering(bool enable);
-
-/**
  * @brief import initial config from .ini file
  *
  * @param path initial config file location
@@ -762,7 +766,85 @@ BLACKBOX_API const char* info_get_computer_name();
 BLACKBOX_API const char* info_get_version();
 
 /**
- * @brief NEW! Issue reporter API
+ * @brief Load local config preferences
+ * @param game_name
+ *
+ * @return error::code Describe any errors encountered
+ */
+BLACKBOX_API error::code load_local_config(const char* game_name);
+
+/**
+ * @brief Save local config preferences
+ * @param game_name
+ *
+ * @return error::code Describe any errors encountered
+ */
+BLACKBOX_API error::code save_local_config(const char* game_name);
+
+
+/**
+ * @brief set local config enable crash reporter
+ * @param new_local_config_value expected value: ["1", "0", "webconfig"]
+ *
+ * @return error::code Describe any errors encountered
+ */
+BLACKBOX_API error::code local_config_set_enable_crash_reporter(const char* new_local_config_value);
+
+/**
+ * @brief set local config store dxdiag
+ * @param new_local_config_value expected value: ["1", "0", "webconfig"]
+ *
+ * @return error::code Describe any errors encountered
+ */
+BLACKBOX_API error::code local_config_set_store_dxdiag(const char* new_local_config_value);
+
+/**
+ * @brief set local config store crash video
+ * @param new_local_config_value expected value: ["1", "0", "webconfig"]
+ *
+ * @return error::code Describe any errors encountered
+ */
+BLACKBOX_API error::code local_config_set_store_crash_video(const char* new_local_config_value);
+
+/**
+ * @brief set local config enable basic profiling
+ * @param new_local_config_value expected value: ["1", "0", "webconfig"]
+ *
+ * @return error::code Describe any errors encountered
+ */
+BLACKBOX_API error::code local_config_set_enable_basic_profiling(const char* new_local_config_value);
+
+/**
+ * @brief get local config store crash video
+ *
+ * @return const char* store crash video local config value ["1", "0", "webconfig"]
+ */
+BLACKBOX_API const char* local_config_get_enable_crash_reporter();
+
+/**
+ * @brief get local config store crash video
+ *
+ * @return const char* store crash video local config value ["1", "0", "webconfig"]
+ */
+BLACKBOX_API const char* local_config_get_store_dxdiag();
+
+/**
+ * @brief get local config store crash video
+ *
+ * @return const char* store crash video local config value ["1", "0", "webconfig"]
+ */
+BLACKBOX_API const char* local_config_get_store_crash_video();
+
+/**
+ * @brief get local config store crash video
+ *
+ * @return const char* store crash video local config value ["1", "0", "webconfig"]
+ *
+ */
+BLACKBOX_API const char* local_config_get_enable_basic_profiling();
+
+/**
+ * @brief Issue reporter API
  */
 BLACKBOX_API void capture_screenshot(const char* parent_path);
 
@@ -836,6 +918,11 @@ BLACKBOX_API const char* generate_temp_dir();
  * @brief Clean generated temp directory
  */
 BLACKBOX_API void remove_temp_dir();
+
+/**
+ * @brief Create blackbox session id alias folder to communicate with Blackbox Hub.
+ */
+BLACKBOX_API void generate_session_id_alias_folder(const std::string& session_id);
 
 } // namespace blackbox
 

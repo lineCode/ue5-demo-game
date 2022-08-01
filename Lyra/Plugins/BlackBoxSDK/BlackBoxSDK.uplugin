@@ -1,7 +1,7 @@
 {
   "FileVersion": 3,
   "Version": 1,
-  "VersionName": "2.19.0",
+  "VersionName": "2.21.0",
   "FriendlyName": "BlackBoxSDK",
   "Description": "BlackBox offers a suite of essential tools that developers use to efficiently capture and analyze game crashes, and monitor the performance of all key game systems. This ensures that newly developed game features are not having a detrimental impact on the game during development, production, and pre or post-launch.",
   "Category": "Accelbyte",
@@ -12,7 +12,6 @@
   "SupportURL": "blackbox-support@accelbyte.net",
   "EnabledByDefault": true,
   "CanContainContent": false,
-  "IsBetaVersion": true,
   "Installed": false,
   "Modules": [
     {

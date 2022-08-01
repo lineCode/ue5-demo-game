@@ -62,7 +62,7 @@ public class BlackBoxSDKPlatform_XSX : BlackBoxSDKPlatform
     {
         return Path.Combine(PluginDir, "Libs/x64/XSX");
     }
-#if UE_4_22_OR_LATER
+
     public override List<string> GetPrivateDefinitions()
     {
         return new List<string>
@@ -79,23 +79,7 @@ public class BlackBoxSDKPlatform_XSX : BlackBoxSDKPlatform
             "_CRT_SECURE_NO_WARNINGS"
         };
     }
-#else
-    public override List<string> GetDefinitions()
-    {
-        List<string> Definitions = new List<string>();
-        Definitions.Add("_CRT_SECURE_NO_WARNINGS");
-        Definitions.Add("BLACKBOX_USE_SHARED_LIBRARY");
-        // Uncomment this to enable blackbox crash handling on xbox
-        //Definitions.Add("BLACKBOX_ENABLE_XBOX_GDK_CRASH_REPORT");
-        if (XSAPIExtensionDir != null)
-        {
-            Definitions.Add("HC_PLATFORM=HC_PLATFORM_GSDK");
-            Definitions.Add("HC_DATAMODEL=HC_DATAMODEL_LLP64");
-            Definitions.Add("HC_PLATFORM_IS_MICROSOFT=1");
-        }
-        return Definitions;
-    }
-#endif
+
     public override List<string> GetRuntimeDependencies()
     {
         return new List<string>
@@ -123,7 +107,8 @@ public class BlackBoxSDKPlatform_XSX : BlackBoxSDKPlatform
     {
         return new Dictionary<string, string>
         {
-            {"$(TargetOutputDir)/XCurl.dll", Path.Combine(XCurlDllDir, "XCurl.dll")}
+            {"$(TargetOutputDir)/XCurl.dll", Path.Combine(XCurlDllDir, "XCurl.dll")},
+            {"$(TargetOutputDir)/BlackBoxSDK-XboxSeriesX.dll", Path.Combine(GetDLLsDirPath(), "BlackBoxSDK-XboxSeriesX.dll")}
         };
     }
 
