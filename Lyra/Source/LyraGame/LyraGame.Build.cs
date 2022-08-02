@@ -76,7 +76,6 @@ public class LyraGame : ModuleRules
 				"AccelByteCommonServer",
 				"AccelByteCommonGame",
 				"AccelByteEndgame",
-				"AccelByteSocialToolkit",
 				"Party"
 			}
 		);

@@ -115,7 +115,7 @@ void ULyraTeamCreationComponent::ServerChooseTeamForPlayer(ALyraPlayerState* PS)
 	// Destroy bot when new player joins mid-match
 	// Will only be "used" on custom session, since matchmaking have less player limit and no bots
 	int32 MaxPlayerInMatch = 0;
-	GConfig->GetInt(TEXT("AccelByteSocialToolkit"), TEXT("MaxPartyMembers_CustomSession"), MaxPlayerInMatch, GEngineIni);
+	GConfig->GetInt(TEXT("AccelByteSocial"), TEXT("MaxPartyMembers_CustomSession"), MaxPlayerInMatch, GEngineIni);
 	const int32 CurrentPlayerNum = GetWorld()->GetNumControllers();
 
 
