@@ -451,4 +451,6 @@ private:
 	static FString SetPartyDataArrayOfString_Helper(TArray<FString> InArray);
 
 	static int32 PositiveModulo(const int32 i, const int32 n);
+
+	void LeaveParty_Helper(const FPartyVoidDelegate& OnComplete, const int32 NewPartyMemberLimit, const int32 LocalPlayerIndex);
 };

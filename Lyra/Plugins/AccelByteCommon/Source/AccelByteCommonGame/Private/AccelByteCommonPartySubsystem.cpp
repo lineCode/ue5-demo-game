@@ -4,8 +4,8 @@
 #include "AccelByteCommonPartySubsystem.h"
 
 #include "Online.h"
+#include "OnlineIdentityInterfaceAccelByte.h"
 #include "OnlineSubsystemUtils.h"
-#include "SocialManager.h"
 #include "Core/AccelByteMultiRegistry.h"
 #include "Messaging/CommonGameDialog.h"
 #include "Party/SocialParty.h"
@@ -17,6 +17,24 @@ void UAccelByteCommonPartySubsystem::Initialize(FSubsystemCollectionBase& Collec
 	OSS = Online::GetSubsystem(GetWorld());
 
 	SetPartyNotifDelegates();
+
+	// OnLobbyConnected sequence
+	const FOnlineIdentityAccelBytePtr IdentityInterface = StaticCastSharedPtr<FOnlineIdentityAccelByte>(OSS->GetIdentityInterface());
+	check(IdentityInterface);
+	IdentityInterface->AddOnConnectLobbyCompleteDelegate_Handle(0, FOnConnectLobbyCompleteDelegate::CreateWeakLambda(
+		this, [this](int32 LocalUserNum, bool /*bWasSuccessful*/, const FUniqueNetId& /*UserId*/, const FString& /*Error*/)
+		{
+			// query party, needed for the OnPartyInvite popup to work
+			const IOnlineFriendsPtr OnlineFriends = OSS->GetFriendsInterface();
+			check(OnlineFriends);
+			OnlineFriends->ReadFriendsList(LocalUserNum, "");
+
+			// create party if bAutoCreateParty config is true
+			if (ShouldAutoCreateParty())
+			{
+				CreateParty(LocalUserNum);
+			}
+		}));
 }
 
 void UAccelByteCommonPartySubsystem::GetPartyMember(
@@ -256,20 +274,13 @@ void UAccelByteCommonPartySubsystem::LeavePartyIfInParty(bool& OutbWasInParty, c
 					const FOnlinePartyId& PartyId,
 					const ELeavePartyCompletionResult Result)
 				{
-					if (ShouldAutoCreateParty())
-					{
-						UE_LOG(LogAccelByteCommonParty, Log, TEXT("bAutoCreateParty true: creating party"));
-						CreateParty(LocalPlayerIndex, TDelegate<void()>::CreateWeakLambda(this, [OnComplete]()
-						{
-							OnComplete.ExecuteIfBound();
-						}), NewPartyMemberLimit);
-					}
-					else
-					{
-						OnComplete.ExecuteIfBound();
-					}
+					LeaveParty_Helper(OnComplete, NewPartyMemberLimit, LocalPlayerIndex);
 				}));
 			OutbWasInParty = true;
+		}
+		else
+		{
+			LeaveParty_Helper(OnComplete, NewPartyMemberLimit, LocalPlayerIndex);
 		}
 	}
 }
@@ -370,12 +381,20 @@ void UAccelByteCommonPartySubsystem::SetPartyNotifDelegates(int32 LocalPlayerInd
 				// prevent confirmation menu to be shown multiple times
 				if (!bIsPartyInviteConfirmationShown)
 				{
-					const FABPartySubsystemPartyMember Sender(
-						FUniqueNetIdRepl(SenderId),
-						FriendsPtr->GetFriend(LocalPlayerIndex, SenderId, "")->GetDisplayName(),
-						&PartyId);
+					const TSharedPtr<FOnlineFriend> Friend = FriendsPtr->GetFriend(LocalPlayerIndex, SenderId, "");
+					if (Friend.IsValid())
+					{
+						const FABPartySubsystemPartyMember Sender(
+							FUniqueNetIdRepl(SenderId),
+							FriendsPtr->GetFriend(LocalPlayerIndex, SenderId, "")->GetDisplayName(),
+							&PartyId);
 
-					ShowReceivedInvitePopup(this, Sender, LocalPlayerIndex);
+						ShowReceivedInvitePopup(this, Sender, LocalPlayerIndex);
+					}
+					else
+					{
+						UE_LOG(LogAccelByteCommonParty, Warning, TEXT("Query friend is not yet finished. Skipping this invite"));
+					}
 				}
 			});
 	}
@@ -464,7 +483,7 @@ bool UAccelByteCommonPartySubsystem::IsLocalUserLeader(int32 LocalPlayerIndex) c
 bool UAccelByteCommonPartySubsystem::ShouldAutoCreateParty()
 {
 	bool bAutoCreateParty = false;
-	GConfig->GetBool(TEXT("AccelByteSocialToolkit"), TEXT("bAutoCreateParty"), bAutoCreateParty, GEngineIni);
+	GConfig->GetBool(TEXT("AccelByteSocial"), TEXT("bAutoCreateParty"), bAutoCreateParty, GEngineIni);
 	return bAutoCreateParty;
 }
 
@@ -510,10 +529,10 @@ int32 UAccelByteCommonPartySubsystem::GetPartyMemberLimitPreset(EPartyMatchType 
 	switch (PartyMatchType)
 	{
 	case EPartyMatchType::QuickMatch:
-		GConfig->GetInt(TEXT("AccelByteSocialToolkit"), TEXT("MaxPartyMembers"), MaxPartyMembers, GEngineIni);
+		GConfig->GetInt(TEXT("AccelByteSocial"), TEXT("MaxPartyMembers"), MaxPartyMembers, GEngineIni);
 		break;
 	case EPartyMatchType::CustomSession:
-		GConfig->GetInt(TEXT("AccelByteSocialToolkit"), TEXT("MaxPartyMembers_CustomSession"), MaxPartyMembers, GEngineIni);
+		GConfig->GetInt(TEXT("AccelByteSocial"), TEXT("MaxPartyMembers_CustomSession"), MaxPartyMembers, GEngineIni);
 		break;
 	}
 
@@ -856,4 +875,20 @@ FString UAccelByteCommonPartySubsystem::SetPartyDataArrayOfString_Helper(TArray<
 int32 UAccelByteCommonPartySubsystem::PositiveModulo(const int32 i, const int32 n)
 {
 	return ((i % n) + n) % n;
+}
+
+void UAccelByteCommonPartySubsystem::LeaveParty_Helper(const FPartyVoidDelegate& OnComplete, const int32 NewPartyMemberLimit, const int32 LocalPlayerIndex)
+{
+	if (ShouldAutoCreateParty())
+	{
+		UE_LOG(LogAccelByteCommonParty, Log, TEXT("bAutoCreateParty true: creating party"));
+		CreateParty(LocalPlayerIndex, TDelegate<void()>::CreateWeakLambda(this, [OnComplete]()
+		{
+			OnComplete.ExecuteIfBound();
+		}), NewPartyMemberLimit);
+	}
+	else
+	{
+		OnComplete.ExecuteIfBound();
+	}
 }
