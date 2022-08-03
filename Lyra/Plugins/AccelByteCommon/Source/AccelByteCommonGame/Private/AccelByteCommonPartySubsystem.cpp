@@ -575,15 +575,19 @@ ECustomSessionTeam UAccelByteCommonPartySubsystem::GetLocalPlayerTeam(int32 Loca
 
 		const FString LocalAccelByteIdString = GetLocalPlayerAccelByteIdString(LocalPlayerIndex);
 
-		if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Team1).Find(LocalAccelByteIdString) != -1)
+		const FString Team1String = GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Team1);
+		const FString Team2String = GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Team2);
+		const FString QueueString = GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Queue);
+
+		if (Team1String.Find(LocalAccelByteIdString) != -1)
 		{
 			Team = ECustomSessionTeam::Team1;
 		}
-		else if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Team2).Find(LocalAccelByteIdString) != -1)
+		else if (Team2String.Find(LocalAccelByteIdString) != -1)
 		{
 			Team = ECustomSessionTeam::Team2;
 		}
-		else if (GetCachedPartyDataString(LocalPlayerIndex, PartyAttrName_CustomSession_Queue).Find(LocalAccelByteIdString) != -1)
+		else if (QueueString.Find(LocalAccelByteIdString) != -1)
 		{
 			Team = ECustomSessionTeam::Queue;
 		}
@@ -633,12 +637,15 @@ void UAccelByteCommonPartySubsystem::CycleLocalPlayerTeam(bool CycleNext, int32 
 		}
 
 		// update party data
-		const FString RemoveResult = RemoveStringFromPartyDataArrayOfString(
+		if (GetLocalPlayerTeam(LocalPlayerIndex) != ECustomSessionTeam::NoTeam)
+		{
+			const FString RemoveResult = RemoveStringFromPartyDataArrayOfString(
 				LocalPlayerIndex,
 				PartyAttr_CustomSession_Team[LocalUserTeamOld],
 				LocalAccelByteIdString,
 				false);
-		TempData.Add(PartyAttr_CustomSession_Team[LocalUserTeamOld], RemoveResult);
+			TempData.Add(PartyAttr_CustomSession_Team[LocalUserTeamOld], RemoveResult);
+		}
 
 		const FString AppendResult = SetPartyDataArrayOfString(
 			LocalPlayerIndex,
@@ -701,6 +708,8 @@ FString UAccelByteCommonPartySubsystem::GetCachedPartyDataString(int32 LocalPlay
 			}
 		}
 	}
+
+	UE_LOG(LogAccelByteCommonParty, Log, TEXT("Cached party data:: Key: %s | Value: %s"), *PartyAttrName, *DataString);
 
 	return DataString;
 }
@@ -858,6 +867,7 @@ void UAccelByteCommonPartySubsystem::SetPartyData(int32 LocalPlayerIndex, TMap<F
 			}
 
 			PartyPtr->UpdatePartyData(*LocalUserId, *OnlineParty->PartyId, DefaultPartyDataNamespace, PartyData);
+			OnPartyDataSetDelegate.Broadcast();
 		}
 	}
 }

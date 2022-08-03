@@ -116,11 +116,11 @@ void ULyraTeamCreationComponent::ServerChooseTeamForPlayer(ALyraPlayerState* PS)
 	// Will only be "used" on custom session, since matchmaking have less player limit and no bots
 	int32 MaxPlayerInMatch = 0;
 	GConfig->GetInt(TEXT("AccelByteSocial"), TEXT("MaxPartyMembers_CustomSession"), MaxPlayerInMatch, GEngineIni);
-	const int32 CurrentPlayerNum = GetWorld()->GetNumControllers();
+	const int32 CurrentControllerNum = GetWorld()->GetNumControllers();
 
 
 	// kick first bots if match full
-	if (CurrentPlayerNum >= MaxPlayerInMatch)
+	if (CurrentControllerNum > MaxPlayerInMatch)
 	{
 		for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
 		{
@@ -131,6 +131,7 @@ void ULyraTeamCreationComponent::ServerChooseTeamForPlayer(ALyraPlayerState* PS)
 				Controller->UnPossess();
 				Controller->Destroy(true);
 				FormerPawn->Destroy(true);
+				UE_LOG(LogTemp, Log, TEXT("Removing bot due to match is already filled with bots"))
 				break;
 			}
 		}

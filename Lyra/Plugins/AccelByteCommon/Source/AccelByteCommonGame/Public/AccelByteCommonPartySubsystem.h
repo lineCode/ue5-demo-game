@@ -426,6 +426,12 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FPartyMultiCastDelegate OnPartyDataChangedDelegate;
 
+	/**
+	 * Delegate that will be called upon setting party data
+	 */
+	UPROPERTY(BlueprintAssignable)
+	FPartyMultiCastDelegate OnPartyDataSetDelegate;
+
 protected:
 	void CreateParty(int32 LocalPlayerIndex, TDelegate<void()> OnComplete = TDelegate<void()>(), int32 NewPartyMemberLimit = 2);
 
