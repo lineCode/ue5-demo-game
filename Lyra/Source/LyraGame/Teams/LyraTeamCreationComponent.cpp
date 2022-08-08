@@ -1,11 +1,13 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "LyraTeamCreationComponent.h"
+
 #include "Net/UnrealNetwork.h"
 #include "GameModes/LyraExperienceDefinition.h"
 #include "GameModes/LyraExperienceManagerComponent.h"
 #include "LyraTeamPublicInfo.h"
 #include "LyraTeamPrivateInfo.h"
+#include "LyraTeamSubsystem.h"
 #include "GameFramework/PlayerState.h"
 #include "Player/LyraPlayerState.h"
 #include "GameFramework/PlayerController.h"
@@ -85,10 +87,68 @@ void ULyraTeamCreationComponent::ServerAssignPlayersToTeams()
 
 void ULyraTeamCreationComponent::ServerChooseTeamForPlayer(ALyraPlayerState* PS)
 {
+	// #START @AccelByte Implementation: Pre Assigned bots
+	// assign pre-assigned team to bots
+	if (PS->IsABot())
+	{
+		ALyraGameMode* LyraGameMode = GetGameMode<ALyraGameMode>();
+		FGenericTeamId TeamID;
+
+		if (LyraGameMode)
+		{
+			if (LyraGameMode->CurrentBotsNum_Team1 < LyraGameMode->PreAssignedBotsNum_Team1)
+			{
+				TeamID = IntegerToGenericTeamId(1);
+				PS->SetGenericTeamId(TeamID);
+				LyraGameMode->CurrentBotsNum_Team1++;
+			}
+			else
+			{
+				TeamID = IntegerToGenericTeamId(2);
+				PS->SetGenericTeamId(TeamID);
+			}
+		}
+
+		return;
+	}
+
+	// Destroy bot when new player joins mid-match
+	// Will only be "used" on custom session, since matchmaking have less player limit and no bots
+	int32 MaxPlayerInMatch = 0;
+	GConfig->GetInt(TEXT("AccelByteSocial"), TEXT("MaxPartyMembers_CustomSession"), MaxPlayerInMatch, GEngineIni);
+	const int32 CurrentControllerNum = GetWorld()->GetNumControllers();
+
+
+	// kick first bots if match full
+	if (CurrentControllerNum > MaxPlayerInMatch)
+	{
+		for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+		{
+			const TWeakObjectPtr<AController> Controller = *It;
+			if (Controller->PlayerState->IsABot() && HasAuthority())
+			{
+				APawn* FormerPawn = Controller->GetPawn();
+				Controller->UnPossess();
+				Controller->Destroy(true);
+				FormerPawn->Destroy(true);
+				UE_LOG(LogTemp, Log, TEXT("Removing bot due to match is already filled with bots"))
+				break;
+			}
+		}
+	}
+	// #END
+
 	if (PS->IsOnlyASpectator())
 	{
 		PS->SetGenericTeamId(FGenericTeamId::NoTeam);
 	}
+	// #START @AccelByte Implementation: Pre Assigned team
+	else if (PS->PreAssignedTeamId != 0)
+	{
+		const FGenericTeamId TeamID = IntegerToGenericTeamId(PS->PreAssignedTeamId);
+		PS->SetGenericTeamId(TeamID);
+	}
+	// #END
 	else
 	{
 		const FGenericTeamId TeamID = IntegerToGenericTeamId(GetLeastPopulatedTeamID());

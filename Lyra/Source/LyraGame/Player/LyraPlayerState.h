@@ -46,6 +46,10 @@ class LYRAGAME_API ALyraPlayerState : public AModularPlayerState, public IAbilit
 	GENERATED_BODY()
 
 public:
+	/** #START @AccelByte Implementation: Pre assigned team */
+	int32 PreAssignedTeamId = 0;
+	/** #END */
+
 	ALyraPlayerState(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	UFUNCTION(BlueprintCallable, Category = "Lyra|PlayerState")

@@ -147,10 +147,13 @@ void UAccelByteCommonCommerceSubsystem::HandleOnLoginStatusChanged(int UserIndex
 	}
 	if(PlatformSubsystem)
 	{
-		StartupTaskCounter += 1;
-		// Platform store used to buy the currency
-		PlatformSubsystem->GetStoreV2Interface()->QueryOffersByFilter(FUniqueNetIdString::EmptyId().Get(), FOnlineStoreFilter(),
-			FOnQueryOnlineStoreOffersComplete::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnQueryOffersPlatformCompleted));
+		if(PlatformSubsystem->GetStoreV2Interface())
+		{
+			StartupTaskCounter += 1;
+			// Platform store used to buy the currency
+			PlatformSubsystem->GetStoreV2Interface()->QueryOffersByFilter(FUniqueNetIdString::EmptyId().Get(), FOnlineStoreFilter(),
+				FOnQueryOnlineStoreOffersComplete::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnQueryOffersPlatformCompleted));
+		}
 	}
 }
 

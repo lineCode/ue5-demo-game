@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "LyraGameMode.h"
+
+#include "AccelByteCommonPartySubsystem.h"
 #include "LyraLogChannels.h"
 #include "System/LyraAssetManager.h"
 #include "LyraGameState.h"
@@ -332,6 +334,40 @@ void ALyraGameMode::InitGameState()
 	ULyraExperienceManagerComponent* ExperienceComponent = GameState->FindComponentByClass<ULyraExperienceManagerComponent>();
 	check(ExperienceComponent);
 	ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnLyraExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
+}
+
+FString ALyraGameMode::InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId,
+	const FString& Options, const FString& Portal)
+{
+	FString Result = Super::InitNewPlayer(NewPlayerController, UniqueId, Options, Portal);
+
+	// #START @AccelByte Implementation: Pre assigned team based on connect URL
+	// assign team based on stored data
+	int32 AssignedTeam = 0;
+	const FString AssignedTeamString = UGameplayStatics::ParseOption(Options, "AssignedTeam");
+	// only need one since the NumBots is always passed
+	const FString AssignedBotsTeam1String = UGameplayStatics::ParseOption(Options, "Team1Bots");
+	if (!AssignedTeamString.IsEmpty())
+	{
+		if (AssignedTeamString == UAccelByteCommonPartySubsystem::PartyAttrName_CustomSession_Team1)
+		{
+			AssignedTeam = 1;
+		}
+		else if (AssignedTeamString == UAccelByteCommonPartySubsystem::PartyAttrName_CustomSession_Team2)
+		{
+			AssignedTeam = 2;
+		}
+	}
+	if (!AssignedBotsTeam1String.IsEmpty())
+	{
+		PreAssignedBotsNum_Team1 = FCString::Atoi(*AssignedBotsTeam1String);
+	}
+
+	ALyraPlayerState* LyraPlayerState = Cast<ALyraPlayerState>(NewPlayerController->PlayerState);
+	LyraPlayerState->PreAssignedTeamId = AssignedTeam;
+	// #END
+
+	return Result;
 }
 
 void ALyraGameMode::Logout(AController* Exiting)

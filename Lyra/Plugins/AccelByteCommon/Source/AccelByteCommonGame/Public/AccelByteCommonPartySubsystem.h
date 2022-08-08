@@ -62,8 +62,18 @@ enum class EPartyStatus : uint8
 UENUM(BlueprintType)
 enum class EPartyMatchType : uint8
 {
-	QuickMatch,
+	QuickMatch = 0,
 	CustomSession
+};
+
+UENUM(BlueprintType)
+enum class ECustomSessionTeam : uint8
+{
+	NoTeam = 0,
+	Team1 = 1,
+	Team2 = 2,
+	Queue = 3,
+	Max = 4
 };
 
 #pragma endregion
@@ -89,35 +99,48 @@ public:
 
 #pragma region Project specific party attributes
 
+	static inline FString PartyAttrValue_MatchType_QuickMatch = "QuickMatch";
+	static inline FString PartyAttrValue_MatchType_CustomSession = "CustomSession";
+	static inline FString PartyAttrName_CustomSession_Team1 = "Team1";
+	static inline FString PartyAttrName_CustomSession_Team2 = "Team2";
+	static inline FString PartyAttrName_CustomSession_Queue = "Queue";
+
+	UPROPERTY(BlueprintReadOnly)
+	TMap<EPartyMatchType, FString> PartyAttr_MatchType = {
+		{EPartyMatchType::QuickMatch, PartyAttrValue_MatchType_QuickMatch},
+		{EPartyMatchType::CustomSession, PartyAttrValue_MatchType_CustomSession}
+	};
+
+	UPROPERTY(BlueprintReadOnly)
+	TMap<ECustomSessionTeam, FString> PartyAttr_CustomSession_Team = {
+		{ECustomSessionTeam::Team1, PartyAttrName_CustomSession_Team1},
+		{ECustomSessionTeam::Team2, PartyAttrName_CustomSession_Team2},
+		{ECustomSessionTeam::Queue, PartyAttrName_CustomSession_Queue}
+	};
+
 	UPROPERTY(BlueprintReadOnly)
 	FString PartyAttrName_MatchType = "MatchType";
 
 	UPROPERTY(BlueprintReadOnly)
-	FString PartyAttrValue_MatchType_QuickMatch = "QuickMatch";
+	FString PartyAttrName_CustomSession_Config_Bots = "BotsConfig";
 
 	UPROPERTY(BlueprintReadOnly)
-	FString PartyAttrValue_MatchType_CustomSession = "CustomSession";
+	FString PartyAttrName_CustomSession_Config_Network = "NetworkConfig";
 
 	UPROPERTY(BlueprintReadOnly)
-	FString PartyAttrName_CustomSession_Team1 = "Team 1";
+	FString PartyAttrName_CustomSession_Config_Map = "MapConfig";
 
 	UPROPERTY(BlueprintReadOnly)
-	FString PartyAttrName_CustomSession_Team2 = "Team 2";
+	FString PartyAttrName_CustomSession_AssignedTeam = "AssignedTeam";
 
 	UPROPERTY(BlueprintReadOnly)
-	FString PartyAttrName_CustomSession_Observer = "Observer";
+	FString PartyAttrName_CustomSession_AssignedBotsNum_Team1 = "Team1Bots";
 
 	UPROPERTY(BlueprintReadOnly)
-	FString PartyAttrName_CustomSession_Config_Bots = "Bots Config";
+	FString PartyAttrName_CustomSession_Creating = "Creating";
 
 	UPROPERTY(BlueprintReadOnly)
-	FString PartyAttrName_CustomSession_Config_Network = "Network Config";
-
-	UPROPERTY(BlueprintReadOnly)
-	FString PartyAttrName_CustomSession_Config_Map = "Map Config";
-
-	UPROPERTY(BlueprintReadOnly)
-	FString PartyAttrName_CustomSession_Owner = "Owner Id";
+	FString PartyAttrName_CustomSession_Owner = "OwnerId";
 
 #pragma endregion
 
@@ -279,7 +302,7 @@ public:
 	 * @return Preset party member limit
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
-	int32 GetPartyMemberLimitPreset(EPartyMatchType PartyMatchType = EPartyMatchType::QuickMatch);
+	int32 GetPartyMemberLimitPreset(EPartyMatchType PartyMatchType = EPartyMatchType::QuickMatch) const;
 
 	/**
 	 * Set party data from string. Will replace the attribute if already exist.
@@ -341,23 +364,19 @@ public:
 	 * @return Local player team
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
-	FString GetLocalPlayerTeam(int32 LocalPlayerIndex) const;
+	ECustomSessionTeam GetLocalPlayerTeam(int32 LocalPlayerIndex) const;
 
 	/**
-	 * Move the local player from one team to another
+	 * Cycle local player from one team to another
 	 *
+	 * @param CycleNext The distance local player will cycle team. Set 1 to cycle to next, set -1 to cycle to previous.
 	 * @param LocalPlayerIndex Local player index
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
-	void ChangeLocalPlayerTeamToNextTeam(int32 LocalPlayerIndex);
+	void CycleLocalPlayerTeam(bool CycleNext = true, int32 LocalPlayerIndex = 0);
 
-	/**
-	 * Move the local player from one team to another
-	 *
-	 * @param LocalPlayerIndex Local player index
-	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
-	void ChangeLocalPlayerTeamToPreviousTeam(int32 LocalPlayerIndex);
+	int32 GetTeamMembersNum(ECustomSessionTeam Team, const int32 LocalPlayerIndex = 0) const;
 
 #pragma endregion
 
@@ -381,7 +400,7 @@ public:
 	 * @return party attribute value in array of strings
 	 */
 	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Party")
-	TArray<FString> GetCachedPartyDataArrayOfString(int32 LocalPlayerIndex, FString PartyAttrName);
+	TArray<FString> GetCachedPartyDataArrayOfString(int32 LocalPlayerIndex, FString PartyAttrName) const;
 
 	/**
 	 * Delegate that will be called upon accept party invitation success
@@ -407,6 +426,12 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FPartyMultiCastDelegate OnPartyDataChangedDelegate;
 
+	/**
+	 * Delegate that will be called upon setting party data
+	 */
+	UPROPERTY(BlueprintAssignable)
+	FPartyMultiCastDelegate OnPartyDataSetDelegate;
+
 protected:
 	void CreateParty(int32 LocalPlayerIndex, TDelegate<void()> OnComplete = TDelegate<void()>(), int32 NewPartyMemberLimit = 2);
 
@@ -426,6 +451,12 @@ protected:
 
 	IOnlineSubsystem* OSS;
 
+	bool bIsPartyInviteConfirmationShown = false;
+
 private:
 	static FString SetPartyDataArrayOfString_Helper(TArray<FString> InArray);
+
+	static int32 PositiveModulo(const int32 i, const int32 n);
+
+	void LeaveParty_Helper(const FPartyVoidDelegate& OnComplete, const int32 NewPartyMemberLimit, const int32 LocalPlayerIndex);
 };

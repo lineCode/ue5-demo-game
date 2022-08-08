@@ -44,6 +44,9 @@ public:
 	virtual void FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation) override;
 	virtual bool PlayerCanRestart_Implementation(APlayerController* Player) override;
 	virtual void InitGameState() override;
+	// #START @AccelByte Implementation: Pre assigned team
+	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
+	// #END
 	// #START @AccelByte Implementation Login Logout
 	virtual void Logout(AController* Exiting) override;
 	virtual void InitiateDSCrash();
@@ -59,6 +62,11 @@ public:
 
 	// Agnostic version of PlayerCanRestart that can be used for both player bots and players
 	virtual bool ControllerCanRestart(AController* Controller);
+
+	// #START @AccelByte Implementation : Pre assigned bots;
+	int32 PreAssignedBotsNum_Team1 = 0;
+	int32 CurrentBotsNum_Team1 = 0;
+	// #END
 
 private:
 	FOnGameModeCombinedPostLogin OnGameModeCombinedPostLoginDelegate;

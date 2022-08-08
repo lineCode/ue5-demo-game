@@ -2,7 +2,7 @@
 
 #include "LyraGameInstance.h"
 
-#include "AccelByteSocialManager.h"
+#include "SocialManager.h"
 #include "Player/LyraPlayerController.h"
 
 ULyraGameInstance::ULyraGameInstance(const FObjectInitializer& ObjectInitializer)
@@ -14,7 +14,7 @@ void ULyraGameInstance::Init()
 {
 	Super::Init();
 #if !UE_SERVER
-	SocialManager = NewObject<UAccelByteSocialManager>(this);
+	SocialManager = NewObject<USocialManager>(this);
 	SocialManager->InitSocialManager();
 #endif
 }
