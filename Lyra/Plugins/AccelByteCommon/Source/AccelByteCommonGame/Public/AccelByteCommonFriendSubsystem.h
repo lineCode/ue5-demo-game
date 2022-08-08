@@ -129,6 +129,18 @@ public:
 	void GetFriendsList(const TDelegate<void(TArray<FABFriendSubsystemOnlineFriend>&)>& OnComplete, int32 LocalPlayerIndex = 0);
 
 	/**
+	 * Get Friend object by Unique Net Id
+	 *
+	 * @param OutFoundFriend Friend object output
+	 * @param TargetId Unique Id to be search
+	 * @param LocalPlayerIndex Local player index
+	 *
+	 * @return whether Friend object found or not
+	 */
+	UFUNCTION(BlueprintCallable, Category = "AccelByte | Common | Friends", meta = (ExpandBoolAsExecs = "ReturnValue"))
+	bool GetFriendByUniqueNetId(FABFriendSubsystemOnlineFriend& OutFoundFriend, const FUniqueNetIdRepl TargetId, int32 LocalPlayerIndex = 0);
+
+	/**
 	 * Get Display Name and Logged In platform of local user from SocialToolkit
 	 *
 	 * @param OutDisplayName Display name output
@@ -191,6 +203,8 @@ public:
 
 private:
 	static EABFriendSubsystemInviteStatus BlueprintableInviteStatusConversion(EInviteStatus::Type InviteStatus);
+
+	static FABFriendSubsystemOnlineFriend BlueprintableOnlineFriendConversion(TSharedPtr<FOnlineFriend> OnlineFriend);
 
 	void SetFriendsNotifDelegates();
 

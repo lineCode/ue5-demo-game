@@ -47,6 +47,43 @@ void UAccelByteCommonFriendSubsystem::GetFriendsList(
 	}
 }
 
+bool UAccelByteCommonFriendSubsystem::GetFriendByUniqueNetId(
+	FABFriendSubsystemOnlineFriend& OutFoundFriend,
+	const FUniqueNetIdRepl TargetId,
+	int32 LocalPlayerIndex)
+{
+	const IOnlineFriendsPtr FriendsPtr = OSS->GetFriendsInterface();
+	check(FriendsPtr);
+
+	/*
+	 * GetFriend doesn't work 100% of the time. Manually search the array for now.
+	 * Case which 'it' dont work: A and B not friend > A send B friend request > A can found B with it's Unique Id found
+	 * by searching by name > B cannot found A with it's Unique Id found by searching by name, although A exists in B's
+	 * inbound list
+	 */
+	TArray<TSharedRef<FOnlineFriend>> OnlineFriends;
+	if (!FriendsPtr->GetFriendsList(LocalPlayerIndex, FriendsListName, OnlineFriends))
+	{
+		UE_LOG(LogAccelByteCommonFriend, Warning, TEXT("Friends list have not yet cached. Call Read friendlist before using this function"));
+		return false;
+	}
+
+	const TSharedRef<const FUniqueNetIdAccelByteUser> ABTargetUser =
+		FUniqueNetIdAccelByteUser::Cast(*TargetId.GetUniqueNetId());
+	for (const TSharedRef<FOnlineFriend>& OnlineFriend : OnlineFriends)
+	{
+		const TSharedRef<const FUniqueNetIdAccelByteUser> ABUser =
+			FUniqueNetIdAccelByteUser::Cast(*OnlineFriend->GetUserId());
+		if (ABUser->GetAccelByteId() == ABTargetUser->GetAccelByteId())
+		{
+			OutFoundFriend = BlueprintableOnlineFriendConversion(OnlineFriend);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void UAccelByteCommonFriendSubsystem::GetLocalUserDisplayNameAndPlatform(
 	FString& OutDisplayName, FString& OutPlatform, const int32 LocalPlayerIndex) const
 {
@@ -199,4 +236,15 @@ EABFriendSubsystemInviteStatus UAccelByteCommonFriendSubsystem::BlueprintableInv
 	default:
 		return EABFriendSubsystemInviteStatus::Unknown;
 	}
+}
+
+FABFriendSubsystemOnlineFriend UAccelByteCommonFriendSubsystem::BlueprintableOnlineFriendConversion(
+	TSharedPtr<FOnlineFriend> OnlineFriend)
+{
+	FABFriendSubsystemOnlineFriend ABOnlineFriend = FABFriendSubsystemOnlineFriend(
+		OnlineFriend->GetUserId(),
+		OnlineFriend->GetDisplayName());
+	ABOnlineFriend.InviteStatus = BlueprintableInviteStatusConversion(OnlineFriend->GetInviteStatus());
+
+	return ABOnlineFriend;
 }
