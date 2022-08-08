@@ -70,7 +70,7 @@ bool UAccelByteCommonFriendSubsystem::GetFriendByUniqueNetId(
 
 	const TSharedRef<const FUniqueNetIdAccelByteUser> ABTargetUser =
 		FUniqueNetIdAccelByteUser::Cast(*TargetId.GetUniqueNetId());
-	for (const TSharedRef<FOnlineFriend> OnlineFriend : OnlineFriends)
+	for (const TSharedRef<FOnlineFriend>& OnlineFriend : OnlineFriends)
 	{
 		const TSharedRef<const FUniqueNetIdAccelByteUser> ABUser =
 			FUniqueNetIdAccelByteUser::Cast(*OnlineFriend->GetUserId());
