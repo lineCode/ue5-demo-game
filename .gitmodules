@@ -7,3 +7,6 @@
 [submodule "Lyra/Plugins/AccelByteOSS/AccelByteUe4Sdk"]
 	path = Lyra/Plugins/AccelByteOSS/AccelByteUe4Sdk
 	url = https://github.com/AccelByte/accelbyte-unreal-sdk-plugin
+[submodule "Lyra/Plugins/CommonUser"]
+	path = Lyra/Plugins/CommonUser
+	url = https://github.com/AccelByte/accelbyte-unreal-common-user
