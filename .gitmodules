@@ -1,6 +1,9 @@
-[submodule "Lyra/Plugins/justice-oss"]
-	path = Lyra/Plugins/justice-oss
-	url = git@bitbucket.org:accelbyte/justice-ue4-oss.git
-[submodule "Lyra/Plugins/CommonUser"]
-	path = Lyra/Plugins/CommonUser
-	url = git@bitbucket.org:accelbyte/justice-unreal-sdk-extensions.git
+[submodule "Lyra/Plugins/AccelByteOSS/OnlineSubsystemAccelByte"]
+	path = Lyra/Plugins/AccelByteOSS/OnlineSubsystemAccelByte
+	url = https://github.com/AccelByte/accelbyte-unreal-oss
+[submodule "Lyra/Plugins/AccelByteOSS/AccelByteNetworkUtilities"]
+	path = Lyra/Plugins/AccelByteOSS/AccelByteNetworkUtilities
+	url = https://github.com/AccelByte/accelbyte-unreal-network-utilities
+[submodule "Lyra/Plugins/AccelByteOSS/AccelByteUe4Sdk"]
+	path = Lyra/Plugins/AccelByteOSS/AccelByteUe4Sdk
+	url = https://github.com/AccelByte/accelbyte-unreal-sdk-plugin
