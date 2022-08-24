@@ -201,14 +201,12 @@ TArray<FABFriendSubsystemOnlineFriend> UAccelByteCommonFriendSubsystem::Blueprin
 			const TSharedRef<const FUniqueNetIdAccelByteUser> ABFriend =
 					FUniqueNetIdAccelByteUser::Cast(*OnlineFriend->GetUserId());
 			const FString FriendPlatformType = ABFriend->GetPlatformType() == ""? PlatformType_Password : ABFriend->GetPlatformType();
-			const FOnlineUserPresence& FriendPresence = OnlineFriend->GetPresence();
 
 			FABFriendSubsystemOnlineFriend ABOnlineFriend = FABFriendSubsystemOnlineFriend(
 				OnlineFriend->GetUserId(),
 				OnlineFriend->GetDisplayName(),
 				FriendPlatformType,
-				BlueprintableInviteStatusConversion(OnlineFriend->GetInviteStatus()),
-				FriendPresence.bIsPlayingThisGame);
+				BlueprintableInviteStatusConversion(OnlineFriend->GetInviteStatus()));
 
 			ABOnlineFriends.Add(ABOnlineFriend);
 		}

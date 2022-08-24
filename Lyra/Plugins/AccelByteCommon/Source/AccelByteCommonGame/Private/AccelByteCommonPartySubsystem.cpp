@@ -24,7 +24,7 @@ void UAccelByteCommonPartySubsystem::Initialize(FSubsystemCollectionBase& Collec
 	IdentityInterface->AddOnConnectLobbyCompleteDelegate_Handle(0, FOnConnectLobbyCompleteDelegate::CreateWeakLambda(
 		this, [this](int32 LocalUserNum, bool /*bWasSuccessful*/, const FUniqueNetId& /*UserId*/, const FString& /*Error*/)
 		{
-			// query party, needed for the OnPartyInvite popup to work
+			// query friends, needed for the OnPartyInvite popup to work
 			const IOnlineFriendsPtr OnlineFriends = OSS->GetFriendsInterface();
 			check(OnlineFriends);
 			OnlineFriends->ReadFriendsList(LocalUserNum, "");

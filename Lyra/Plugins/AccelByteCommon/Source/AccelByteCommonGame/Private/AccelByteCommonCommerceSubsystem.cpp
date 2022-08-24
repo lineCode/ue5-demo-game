@@ -19,16 +19,37 @@ void UAccelByteCommonCommerceSubsystem::Initialize(FSubsystemCollectionBase& Col
 
 	if(DefaultSubsystem)
 	{
-		DefaultSubsystem->GetIdentityInterface()->AddOnLoginStatusChangedDelegate_Handle(0,
-			FOnLoginStatusChangedDelegate::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnLoginStatusChanged));
+		IOnlineIdentityPtr IdentityInterface = DefaultSubsystem->GetIdentityInterface();
+		if(IdentityInterface.IsValid())
+		{
+			IdentityInterface->AddOnLoginStatusChangedDelegate_Handle(0,
+				FOnLoginStatusChangedDelegate::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnLoginStatusChanged));
+		}
+
+		FOnlineSubsystemAccelByte* SubsystemAccelByte = static_cast<FOnlineSubsystemAccelByte*>(DefaultSubsystem);
+		if(SubsystemAccelByte)
+		{
+			// TODO: Uncomment this after OSS commerce is release
+			//SubsystemAccelByte->SetLanguage(TEXT("en-US"));
+		}
 	}
 	
-	GenericErrorHandler = FErrorHandler::CreateWeakLambda(this, [](int32 Code, FString const& ErrMsg){});
+	GenericErrorHandler = FErrorHandler::CreateWeakLambda(this, [](int32 Code, FString const& ErrMsg)
+	{
+		UE_LOG(LogAccelByteCommonCommerce, Error, TEXT("UAccelByteCommonCommerceSubsystem Error: %d, %s"), Code, *ErrMsg);
+	});
 }
 
 void UAccelByteCommonCommerceSubsystem::QueryEntitlements()
 {
-	DefaultSubsystem->GetEntitlementsInterface()->QueryEntitlements(*DefaultSubsystem->GetIdentityInterface()->GetUniquePlayerId(0), TEXT(""));
+	if(DefaultSubsystem != nullptr)
+	{
+		IOnlineEntitlementsPtr EntitlementInterface = DefaultSubsystem->GetEntitlementsInterface();
+		if(EntitlementInterface.IsValid())
+		{
+			EntitlementInterface->QueryEntitlements(*DefaultSubsystem->GetIdentityInterface()->GetUniquePlayerId(0), TEXT(""));
+		}
+	}
 }
 
 void UAccelByteCommonCommerceSubsystem::GetUserEntitlements(TArray<FUserEntitlement>& OutEntitlements)
@@ -49,7 +70,7 @@ void UAccelByteCommonCommerceSubsystem::CheckoutOrder(EOnlineSubsystemType Subsy
 	}
 	if(!PurchaseInterface.IsValid())
 	{
-		//Debug Error here
+		UE_LOG(LogAccelByteCommonCommerce, Error, TEXT("Purchase Interface not found for %s subsystem"), SubsystemType == EOnlineSubsystemType::Platform ? TEXT("Platform") : TEXT("AccelByte"));
 		return;
 	}
 	
@@ -134,14 +155,22 @@ void UAccelByteCommonCommerceSubsystem::HandleOnLoginStatusChanged(int UserIndex
 
 	if(DefaultSubsystem)
 	{
-		DefaultSubsystem->GetEntitlementsInterface()->AddOnQueryEntitlementsCompleteDelegate_Handle(
-			FOnQueryEntitlementsCompleteDelegate::CreateUObject(this,  &UAccelByteCommonCommerceSubsystem::HandleOnQueryEntitlementsComplete));
+		IOnlineEntitlementsPtr EntitlementInterface = DefaultSubsystem->GetEntitlementsInterface();
+		if(EntitlementInterface.IsValid())
+		{
+			EntitlementInterface->AddOnQueryEntitlementsCompleteDelegate_Handle(
+				FOnQueryEntitlementsCompleteDelegate::CreateUObject(this,  &UAccelByteCommonCommerceSubsystem::HandleOnQueryEntitlementsComplete));
+		}
 		
 		StartupTaskCounter += 4;
 		// AccelByte Store used to buy all the items using virtual currency
-		DefaultSubsystem->GetStoreV2Interface()->QueryOffersByFilter(UniqueNetId, FOnlineStoreFilter(),
-			FOnQueryOnlineStoreOffersComplete::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnQueryOffersDefaultCompleted));
-		DefaultSubsystem->GetStoreV2Interface()->QueryCategories(UniqueNetId, FOnQueryOnlineStoreCategoriesComplete::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnQueryCategoriesCompleted));
+		IOnlineStoreV2Ptr StoreV2Interface = DefaultSubsystem->GetStoreV2Interface();
+		if(StoreV2Interface.IsValid())
+		{
+			StoreV2Interface->QueryOffersByFilter(UniqueNetId, FOnlineStoreFilter(),
+				FOnQueryOnlineStoreOffersComplete::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnQueryOffersDefaultCompleted));
+			StoreV2Interface->QueryCategories(UniqueNetId, FOnQueryOnlineStoreCategoriesComplete::CreateUObject(this, &UAccelByteCommonCommerceSubsystem::HandleOnQueryCategoriesCompleted));
+		}
 		QueryEntitlements();
 		QueryBalance();
 	}
@@ -232,7 +261,10 @@ void UAccelByteCommonCommerceSubsystem::HandleCheckoutPlatformComplete(const FOn
 void UAccelByteCommonCommerceSubsystem::HandleOnQueryEntitlementsComplete(bool bSuccess, const FUniqueNetId& UniqueNetId, const FString& Namespaces, const FString& Error)
 {
 	TArray<TSharedRef<FOnlineEntitlement>> OutEntitlements;
-	DefaultSubsystem->GetEntitlementsInterface()->GetAllEntitlements(UniqueNetId, Namespaces, OutEntitlements);
+	if(DefaultSubsystem->GetEntitlementsInterface())
+	{
+		DefaultSubsystem->GetEntitlementsInterface()->GetAllEntitlements(UniqueNetId, Namespaces, OutEntitlements);
+	}
 
 	for(TSharedRef<FOnlineEntitlement> const& Ent : OutEntitlements)
 	{

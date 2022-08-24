@@ -5,6 +5,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AccelByteCommonPresenceSubsystem.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemTypes.h"
 #include "UObject/NoExportTypes.h"
@@ -64,13 +65,10 @@ public:
 	FABFriendSubsystemOnlineUser UserInfo;
 
 	UPROPERTY(BlueprintReadOnly)
-	FString LoggedInPlatform;
-
-	UPROPERTY(BlueprintReadOnly)
 	EABFriendSubsystemInviteStatus InviteStatus = EABFriendSubsystemInviteStatus::Unknown;
 
-	UPROPERTY(BlueprintReadOnly)
-	bool bIsPlayingThisGame = false;
+	UPROPERTY(BlueprintReadWrite)
+	FABOnlineUserPresence Presence;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsInParty = false;
@@ -83,12 +81,9 @@ public:
 		const FUniqueNetIdRepl UserId,
 		const FString& DisplayName,
 		const FString& LoggedInPlatform,
-		const EABFriendSubsystemInviteStatus InviteStatus,
-		const bool& bIsPlayingThisGame) :
+		const EABFriendSubsystemInviteStatus InviteStatus) :
 	UserInfo(UserId, DisplayName),
-	LoggedInPlatform(LoggedInPlatform),
-	InviteStatus(InviteStatus),
-	bIsPlayingThisGame(bIsPlayingThisGame)
+	InviteStatus(InviteStatus)
 	{
 	}
 
@@ -210,6 +205,6 @@ private:
 
 	IOnlineSubsystem* OSS;
 
-	static const inline FString PlatformType_Password = "PSWD";
+	static const inline FString PlatformType_Password = "PC";
 	static const inline FString FriendsListName = "";
 };

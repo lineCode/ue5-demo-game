@@ -12,6 +12,8 @@
 #include "Interfaces/OnlineStoreInterfaceV2.h"
 #include "AccelByteCommonCommerceSubsystem.generated.h"
 
+DECLARE_LOG_CATEGORY_CLASS(LogAccelByteCommonCommerce, Log, All);
+
 UENUM(BlueprintType)
 enum class EOnlineSubsystemType : uint8
 {
